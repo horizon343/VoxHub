@@ -1,0 +1,19 @@
+﻿syntax = "proto3";
+
+package voxhub.v1;
+
+option csharp_namespace = "VoxHubService.Grpc";
+
+service SnapshotImportService {
+  rpc UploadSnapshot (stream UploadSnapshotRequest) returns (UploadSnapshotResponse);
+}
+
+message UploadSnapshotRequest {
+  string model_name = 1;   // only in first message
+  int32 chunk_size = 2;    // only in first message
+  bytes data = 3;          // file chunk bytes
+}
+
+message UploadSnapshotResponse {
+  string version_id = 1;
+}

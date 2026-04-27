@@ -1,0 +1,18 @@
+﻿syntax = "proto3";
+
+package voxhub.v1;
+
+option csharp_namespace = "VoxHubService.Grpc";
+
+service ModelRestoreService {
+  rpc DownloadModel (DownloadModelRequest) returns (stream DownloadModelResponse);
+}
+
+message DownloadModelRequest {
+  string version_id = 1;
+  int32 chunk_size = 2;
+}
+
+message DownloadModelResponse {
+  bytes data = 1; // .vox file chunks
+}

@@ -1,0 +1,21 @@
+﻿syntax = "proto3";
+
+package voxhub.v1;
+
+option csharp_namespace = "VoxHubService.Grpc";
+
+service CommitImportService {
+  rpc UploadCommit (stream UploadCommitRequest) returns (UploadCommitResponse);
+}
+
+message UploadCommitRequest {
+  string model_id = 1;          // only in first message
+  string parent_version_id = 2; // only in first message
+  string message = 3;           // only in first message
+  int32 chunk_size = 4;         // only in first message
+  bytes data = 5;               // file chunk bytes
+}
+
+message UploadCommitResponse {
+  string version_id = 1;
+}
