@@ -5,8 +5,65 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:VoxHub"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
-    <Grid>
+        Title="VoxHub Client"
+        Width="1200"
+        Height="800"
+        WindowStartupLocation="CenterScreen">
+    <Grid Background="#F5F5F5">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="320" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
 
+        <!-- Left panel -->
+        <Border Grid.Column="0"
+                Background="White"
+                BorderBrush="#DDDDDD"
+                BorderThickness="0,0,1,0"
+                Padding="12">
+            <StackPanel>
+                <TextBlock Text="Models / Versions"
+                           FontSize="16"
+                           FontWeight="SemiBold"
+                           Margin="0,0,0,12" />
+
+                <TextBlock Text="Models" FontWeight="SemiBold" Margin="0,0,0,6" />
+                <ListBox Height="260"
+                         ItemsSource="{Binding Models}"
+                         SelectedItem="{Binding SelectedModel}"
+                         DisplayMemberPath="Name"
+                         Margin="0,0,0,16" />
+
+                <TextBlock Text="Versions" FontWeight="SemiBold" Margin="0,0,0,6" />
+                <ListBox Height="260"
+                         ItemsSource="{Binding Versions}"
+                         SelectedItem="{Binding SelectedVersion}"
+                         DisplayMemberPath="Display" />
+            </StackPanel>
+        </Border>
+
+        <!-- Right panel -->
+        <Grid Grid.Column="1" Margin="12">
+            <Border Background="White"
+                    BorderBrush="#DDDDDD"
+                    BorderThickness="1"
+                    CornerRadius="6">
+                <Grid>
+                    <StackPanel HorizontalAlignment="Center"
+                                VerticalAlignment="Center">
+                        <TextBlock Text="3D Viewer"
+                                   HorizontalAlignment="Center"
+                                   FontSize="18"
+                                   Foreground="#888888" />
+                        <TextBlock Text="{Binding SelectedModel.Name, TargetNullValue=No model selected}"
+                                   HorizontalAlignment="Center"
+                                   Margin="0,12,0,0" />
+                        <TextBlock Text="{Binding SelectedVersion.Display, TargetNullValue=No version selected}"
+                                   HorizontalAlignment="Center"
+                                   Margin="0,4,0,0" />
+                    </StackPanel>
+                </Grid>
+            </Border>
+        </Grid>
     </Grid>
 </Window>
