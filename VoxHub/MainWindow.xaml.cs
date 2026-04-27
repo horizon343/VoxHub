@@ -15,7 +15,7 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
 
-        _viewModel = new MainViewModel(new MockVoxelCatalogService());
+        _viewModel = new MainViewModel(new GrpcVoxelCatalogService("http://localhost:5152"));
         DataContext = _viewModel;
 
         Loaded += MainWindow_Loaded;
