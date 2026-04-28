@@ -13,6 +13,7 @@ public sealed class GrpcVoxelCatalogService : IVoxelCatalogService
     private readonly VersionQueryService.VersionQueryServiceClient _versionClient;
     private readonly ModelRestoreService.ModelRestoreServiceClient _restoreClient;
     private readonly SnapshotImportService.SnapshotImportServiceClient _snapshotClient;
+    private readonly CommitImportService.CommitImportServiceClient _commitClient;
 
     public GrpcVoxelCatalogService(string address)
     {
@@ -22,6 +23,7 @@ public sealed class GrpcVoxelCatalogService : IVoxelCatalogService
         _versionClient = new VersionQueryService.VersionQueryServiceClient(channel);
         _restoreClient = new ModelRestoreService.ModelRestoreServiceClient(channel);
         _snapshotClient = new SnapshotImportService.SnapshotImportServiceClient(channel);
+        _commitClient = new CommitImportService.CommitImportServiceClient(channel);
     }
 
     public async Task<IReadOnlyList<ModelListItem>> GetModelsAsync(CancellationToken ct = default)
@@ -48,8 +50,7 @@ public sealed class GrpcVoxelCatalogService : IVoxelCatalogService
             .ToList();
     }
 
-    public async Task DownloadModelAsync(Guid versionId, int chunkSize, Stream destination,
-        CancellationToken ct = default)
+    public async Task DownloadModelAsync(Guid versionId, int chunkSize, Stream destination, CancellationToken ct = default)
     {
         var call = _restoreClient.DownloadModel(new DownloadModelRequest
         {
@@ -66,11 +67,7 @@ public sealed class GrpcVoxelCatalogService : IVoxelCatalogService
         await destination.FlushAsync(ct);
     }
 
-    public async Task<Guid> UploadSnapshotAsync(
-        string modelName,
-        int chunkSize,
-        Stream source,
-        CancellationToken ct = default)
+    public async Task<Guid> UploadSnapshotAsync(string modelName, int chunkSize, Stream source, CancellationToken ct = default)
     {
         using var call = _snapshotClient.UploadSnapshot();
 
@@ -91,6 +88,42 @@ public sealed class GrpcVoxelCatalogService : IVoxelCatalogService
             if (isFirst)
             {
                 request.ModelName = modelName;
+                request.ChunkSize = chunkSize;
+                isFirst = false;
+            }
+
+            await call.RequestStream.WriteAsync(request);
+        }
+
+        await call.RequestStream.CompleteAsync();
+
+        var response = await call.ResponseAsync;
+        return Guid.Parse(response.VersionId);
+    }
+    
+    public async Task<Guid> UploadCommitAsync(Guid modelId, Guid parentVersionId, string commitMessage, int chunkSize, Stream source, CancellationToken ct = default)
+    {
+        using var call = _commitClient.UploadCommit();
+
+        var buffer = new byte[64 * 1024];
+        var isFirst = true;
+
+        while (true)
+        {
+            var read = await source.ReadAsync(buffer, 0, buffer.Length, ct);
+            if (read == 0)
+                break;
+
+            var request = new UploadCommitRequest
+            {
+                Data = ByteString.CopyFrom(buffer, 0, read)
+            };
+
+            if (isFirst)
+            {
+                request.ModelId = modelId.ToString();
+                request.ParentVersionId = parentVersionId.ToString();
+                request.Message = commitMessage;
                 request.ChunkSize = chunkSize;
                 isFirst = false;
             }

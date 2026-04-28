@@ -45,6 +45,19 @@ public sealed class MainViewModel : INotifyPropertyChanged
         }
     }
 
+    private bool _isUploading;
+    public bool IsUploading
+    {
+        get => _isUploading;
+        set
+        {
+            if (_isUploading == value)
+                return;
+            _isUploading = value;
+            OnPropertyChanged();
+        }
+    }
+
     public MainViewModel(IVoxelCatalogService catalogService)
     {
         _catalogService = catalogService;
@@ -93,6 +106,32 @@ public sealed class MainViewModel : INotifyPropertyChanged
         await _catalogService.UploadSnapshotAsync(modelName, chunkSize, fs);
 
         await LoadAsync();
+    }
+
+    public async Task UploadCommitAsync(int chunkSize, string filePath, string commitMessage)
+    {
+        if (SelectedModel is null || SelectedVersion is null)
+            return;
+
+        try
+        {
+            IsUploading = true;
+            await using var fs = File.OpenRead(filePath);
+
+            await _catalogService.UploadCommitAsync(
+                modelId: SelectedModel.Id,
+                parentVersionId: SelectedVersion.Id,
+                commitMessage: commitMessage,
+                chunkSize: chunkSize,
+                source: fs);
+
+            // Обновляем список версий
+            await LoadVersionsAsync();
+        }
+        finally
+        {
+            IsUploading = false;
+        }
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;

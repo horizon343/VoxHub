@@ -66,6 +66,64 @@ public partial class MainWindow : Window
             MessageBox.Show($"Error: {ex.Message}");
         }
     }
+
+    private async void UploadSnapshot_Click(object sender, RoutedEventArgs e)
+    {
+        var dialog = new OpenFileDialog
+        {
+            Filter = "VOX files (*.vox)|*.vox"
+        };
+
+        if (dialog.ShowDialog() != true)
+            return;
+
+        try
+        {
+            if (DataContext is not MainViewModel vm)
+                return;
+
+            var modelName = ModelNameBox.Text;
+            var chunkSize = int.Parse(ChunkSizeBox.Text);
+
+            await vm.UploadSnapshotAsync(modelName, chunkSize, dialog.FileName);
+            MessageBox.Show("Snapshot uploaded successfully!");
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Error: {ex.Message}");
+        }
+    }
+
+    private async void CreateCommit_Click(object sender, RoutedEventArgs e)
+    {
+        var dialog = new OpenFileDialog
+        {
+            Filter = "VOX files (*.vox)|*.vox"
+        };
+
+        if (dialog.ShowDialog() != true)
+            return;
+
+        try
+        {
+            if (DataContext is not MainViewModel vm)
+                return;
+
+            var commitMessage = CommitMessageBox.Text;
+            var chunkSize = int.Parse(ChunkSizeBox.Text);
+
+            UploadStatusText.Text = "Uploading commit...";
+            await vm.UploadCommitAsync(chunkSize, dialog.FileName, commitMessage);
+            
+            UploadStatusText.Text = "✓ Commit uploaded successfully!";
+            MessageBox.Show("Commit created successfully!");
+        }
+        catch (Exception ex)
+        {
+            UploadStatusText.Text = $"✗ Error: {ex.Message}";
+            MessageBox.Show($"Error: {ex.Message}");
+        }
+    }
     
     private bool _rotating;
     private Point _lastMouse;
@@ -128,33 +186,5 @@ public partial class MainWindow : Window
         _distance *= e.Delta > 0 ? 0.9 : 1.1;
         _distance = Math.Clamp(_distance, 20, 1000);
         UpdateCamera();
-    }
-    
-    private async void UploadSnapshot_Click(object sender, RoutedEventArgs e)
-    {
-        if (DataContext is not MainViewModel vm)
-            return;
-
-        var dialog = new OpenFileDialog
-        {
-            Filter = "VOX files (*.vox)|*.vox|All files (*.*)|*.*"
-        };
-
-        if (dialog.ShowDialog() != true)
-            return;
-
-        try
-        {
-            await vm.UploadSnapshotAsync(
-                modelName: ModelNameBox.Text.Trim(),
-                chunkSize: int.Parse(ChunkSizeBox.Text),
-                filePath: dialog.FileName);
-
-            MessageBox.Show("Snapshot uploaded.");
-        }
-        catch (Exception ex)
-        {
-            MessageBox.Show($"Upload failed: {ex.Message}");
-        }
     }
 }

@@ -21,34 +21,67 @@
                 BorderBrush="#DDDDDD"
                 BorderThickness="0,0,1,0"
                 Padding="12">
-            <StackPanel>
-                <TextBlock Text="Models / Versions"
-                           FontSize="16"
-                           FontWeight="SemiBold"
-                           Margin="0,0,0,12" />
+            <ScrollViewer>
+                <StackPanel>
+                    <TextBlock Text="Models / Versions"
+                               FontSize="16"
+                               FontWeight="SemiBold"
+                               Margin="0,0,0,12" />
 
-                <TextBlock Text="Models" FontWeight="SemiBold" Margin="0,0,0,6" />
-                <TextBlock Text="Model name" />
-                <TextBox x:Name="ModelNameBox" Text="test-model" Margin="0,4,0,12" />
+                    <!-- Upload Snapshot Section -->
+                    <TextBlock Text="Upload Snapshot"
+                               FontWeight="SemiBold"
+                               Margin="0,0,0,6" />
+                    <TextBlock Text="Model name" />
+                    <TextBox x:Name="ModelNameBox" Text="test-model" Margin="0,4,0,6" />
 
-                <TextBlock Text="Chunk size" />
-                <TextBox x:Name="ChunkSizeBox" Text="16" Margin="0,4,0,12" />
-                <Button Content="Upload snapshot"
-                        Height="32"
-                        Margin="0,0,0,12"
-                        Click="UploadSnapshot_Click" />
-                <ListBox Height="260"
-                         ItemsSource="{Binding Models}"
-                         SelectedItem="{Binding SelectedModel}"
-                         DisplayMemberPath="Name"
-                         Margin="0,0,0,16" />
+                    <TextBlock Text="Chunk size" />
+                    <TextBox x:Name="ChunkSizeBox" Text="16" Margin="0,4,0,12" />
+                    <Button Content="Upload snapshot"
+                            Height="32"
+                            Margin="0,0,0,16"
+                            Click="UploadSnapshot_Click" />
 
-                <TextBlock Text="Versions" FontWeight="SemiBold" Margin="0,0,0,6" />
-                <ListBox Height="260"
-                         ItemsSource="{Binding Versions}"
-                         SelectedItem="{Binding SelectedVersion}"
-                         DisplayMemberPath="Display" />
-            </StackPanel>
+                    <!-- Models Section -->
+                    <TextBlock Text="Models" FontWeight="SemiBold" Margin="0,0,0,6" />
+                    <ListBox Height="200"
+                             ItemsSource="{Binding Models}"
+                             SelectedItem="{Binding SelectedModel}"
+                             DisplayMemberPath="Name"
+                             Margin="0,0,0,12" />
+
+                    <!-- Versions Section -->
+                    <TextBlock Text="Versions" FontWeight="SemiBold" Margin="0,0,0,6" />
+                    <ListBox Height="150"
+                             ItemsSource="{Binding Versions}"
+                             SelectedItem="{Binding SelectedVersion}"
+                             DisplayMemberPath="Display"
+                             Margin="0,0,0,12" />
+
+                    <!-- Create Commit Section -->
+                    <TextBlock Text="Create Commit"
+                               FontWeight="SemiBold"
+                               Margin="0,0,0,6" />
+                    <TextBlock Text="Commit message" />
+                    <TextBox x:Name="CommitMessageBox"
+                             Text="Updated model"
+                             Margin="0,4,0,12"
+                             AcceptsReturn="True"
+                             Height="60" />
+
+                    <Button x:Name="CreateCommitButton"
+                            Content="Create commit"
+                            Height="32"
+                            Margin="0,0,0,12"
+                            Click="CreateCommit_Click" />
+                    
+                    <TextBlock x:Name="UploadStatusText"
+                               Text=""
+                               Foreground="Green"
+                               Margin="0,0,0,12"
+                               TextWrapping="Wrap" />
+                </StackPanel>
+            </ScrollViewer>
         </Border>
 
         <!-- Right panel -->
