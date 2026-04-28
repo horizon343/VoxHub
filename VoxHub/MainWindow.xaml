@@ -44,31 +44,26 @@
 
         <!-- Right panel -->
         <Grid Grid.Column="1" Margin="12">
-            <Border Background="White"
-                    BorderBrush="#DDDDDD"
-                    BorderThickness="1"
-                    CornerRadius="6">
-                <Grid>
-                    <StackPanel HorizontalAlignment="Center"
-                                VerticalAlignment="Center">
-                        <TextBlock Text="3D Viewer"
-                                   HorizontalAlignment="Center"
-                                   FontSize="18"
-                                   Foreground="#888888" />
-                        <TextBlock Text="{Binding SelectedModel.Name, TargetNullValue=No model selected}"
-                                   HorizontalAlignment="Center"
-                                   Margin="0,12,0,0" />
-                        <TextBlock Text="{Binding SelectedVersion.Display, TargetNullValue=No version selected}"
-                                   HorizontalAlignment="Center"
-                                   Margin="0,4,0,0" />
-                        <Button Content="Download .vox"
-                                Width="140"
-                                Height="32"
-                                Margin="0,16,0,0"
-                                Click="Download_Click"/>
-                    </StackPanel>
-                </Grid>
-            </Border>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                <Button Content="Download .vox"
+                        Width="140"
+                        Height="32"
+                        Click="Download_Click" />
+            </StackPanel>
+
+            <Viewport3D x:Name="Viewport" Grid.Row="1">
+                <Viewport3D.Camera>
+                    <PerspectiveCamera Position="50,50,100"
+                                       LookDirection="-50,-50,-100"
+                                       UpDirection="0,1,0"
+                                       FieldOfView="60" />
+                </Viewport3D.Camera>
+            </Viewport3D>
         </Grid>
     </Grid>
 </Window>

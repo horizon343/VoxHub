@@ -1,5 +1,7 @@
-﻿using System.Windows;
+﻿using System.IO;
+using System.Windows;
 using Microsoft.Win32;
+using VoxHub.Domain.Importing;
 using VoxHub.Services;
 using VoxHub.ViewModels;
 
@@ -29,13 +31,10 @@ public partial class MainWindow : Window
 
     private async void Download_Click(object sender, RoutedEventArgs e)
     {
-        if (DataContext is not MainViewModel vm)
+        if (DataContext is not MainViewModel vm || vm.SelectedVersion is null)
             return;
 
-        if (vm.SelectedVersion is null)
-            return;
-
-        var dialog = new SaveFileDialog()
+        var dialog = new SaveFileDialog
         {
             Filter = "VOX files (*.vox)|*.vox",
             FileName = "model.vox"
@@ -47,11 +46,19 @@ public partial class MainWindow : Window
         try
         {
             await vm.DownloadSelectedVersionAsync(dialog.FileName);
-            MessageBox.Show("Download completed.");
+
+            // сразу открываем и рендерим
+            await using var fs = File.OpenRead(dialog.FileName);
+            var importer = new VoxModelImporter();
+            var model = await importer.ImportAsync(fs);
+
+            VoxelViewportRenderer.Render(Viewport, model);
+
+            MessageBox.Show("Loaded and rendered.");
         }
         catch (Exception ex)
         {
-            MessageBox.Show($"Download failed: {ex.Message}");
+            MessageBox.Show($"Error: {ex.Message}");
         }
     }
 }
