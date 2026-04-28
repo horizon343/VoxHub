@@ -28,6 +28,15 @@
                            Margin="0,0,0,12" />
 
                 <TextBlock Text="Models" FontWeight="SemiBold" Margin="0,0,0,6" />
+                <TextBlock Text="Model name" />
+                <TextBox x:Name="ModelNameBox" Text="test-model" Margin="0,4,0,12" />
+
+                <TextBlock Text="Chunk size" />
+                <TextBox x:Name="ChunkSizeBox" Text="16" Margin="0,4,0,12" />
+                <Button Content="Upload snapshot"
+                        Height="32"
+                        Margin="0,0,0,12"
+                        Click="UploadSnapshot_Click" />
                 <ListBox Height="260"
                          ItemsSource="{Binding Models}"
                          SelectedItem="{Binding SelectedModel}"
@@ -67,7 +76,7 @@
                                        Position="0,0,120"
                                        LookDirection="0,0,-120"
                                        UpDirection="0,1,0"
-                                       FieldOfView="60"/>
+                                       FieldOfView="60" />
                 </Viewport3D.Camera>
             </Viewport3D>
         </Grid>

@@ -85,6 +85,15 @@ public sealed class MainViewModel : INotifyPropertyChanged
             chunkSize: 16,
             destination: fs);
     }
+    
+    public async Task UploadSnapshotAsync(string modelName, int chunkSize, string filePath)
+    {
+        await using var fs = File.OpenRead(filePath);
+
+        await _catalogService.UploadSnapshotAsync(modelName, chunkSize, fs);
+
+        await LoadAsync();
+    }
 
     public event PropertyChangedEventHandler? PropertyChanged;
 

@@ -129,4 +129,32 @@ public partial class MainWindow : Window
         _distance = Math.Clamp(_distance, 20, 1000);
         UpdateCamera();
     }
+    
+    private async void UploadSnapshot_Click(object sender, RoutedEventArgs e)
+    {
+        if (DataContext is not MainViewModel vm)
+            return;
+
+        var dialog = new OpenFileDialog
+        {
+            Filter = "VOX files (*.vox)|*.vox|All files (*.*)|*.*"
+        };
+
+        if (dialog.ShowDialog() != true)
+            return;
+
+        try
+        {
+            await vm.UploadSnapshotAsync(
+                modelName: ModelNameBox.Text.Trim(),
+                chunkSize: int.Parse(ChunkSizeBox.Text),
+                filePath: dialog.FileName);
+
+            MessageBox.Show("Snapshot uploaded.");
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Upload failed: {ex.Message}");
+        }
+    }
 }
