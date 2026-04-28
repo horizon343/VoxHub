@@ -1,4 +1,5 @@
 ﻿using System.Windows;
+using Microsoft.Win32;
 using VoxHub.Services;
 using VoxHub.ViewModels;
 
@@ -24,5 +25,33 @@ public partial class MainWindow : Window
     private async void MainWindow_Loaded(object sender, RoutedEventArgs e)
     {
         await _viewModel.LoadAsync();
+    }
+
+    private async void Download_Click(object sender, RoutedEventArgs e)
+    {
+        if (DataContext is not MainViewModel vm)
+            return;
+
+        if (vm.SelectedVersion is null)
+            return;
+
+        var dialog = new SaveFileDialog()
+        {
+            Filter = "VOX files (*.vox)|*.vox",
+            FileName = "model.vox"
+        };
+
+        if (dialog.ShowDialog() != true)
+            return;
+
+        try
+        {
+            await vm.DownloadSelectedVersionAsync(dialog.FileName);
+            MessageBox.Show("Download completed.");
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Download failed: {ex.Message}");
+        }
     }
 }

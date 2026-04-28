@@ -1,5 +1,6 @@
 ﻿using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.IO;
 using System.Runtime.CompilerServices;
 using VoxHub.Models;
 using VoxHub.Services;
@@ -70,6 +71,19 @@ public sealed class MainViewModel : INotifyPropertyChanged
             Versions.Add(version);
 
         SelectedVersion = Versions.Count > 0 ? Versions[0] : null;
+    }
+
+    public async Task DownloadSelectedVersionAsync(string filePath)
+    {
+        if (SelectedVersion is null)
+            return;
+
+        await using var fs = File.Create(filePath);
+
+        await _catalogService.DownloadModelAsync(
+            versionId: SelectedVersion.Id,
+            chunkSize: 16,
+            destination: fs);
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
