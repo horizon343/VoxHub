@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+package voxhub.v1;
+
+option csharp_namespace = "VoxHubService.Grpc";
+
+service VersionQueryService {
+  rpc ListVersions (ListVersionsRequest) returns (ListVersionsResponse);
+}
+
+message ListVersionsRequest {
+  string model_id = 1;
+}
+
+message VersionDto {
+  string id = 1;
+  string parent_version_id = 2;
+  string kind = 3;
+}
+
+message ListVersionsResponse {
+  repeated VersionDto versions = 1;
+}
