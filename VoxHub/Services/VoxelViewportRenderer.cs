@@ -1,4 +1,7 @@
-﻿using System.Windows.Controls;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Media3D;
 using VoxHub.Domain.Canonical;
@@ -7,43 +10,86 @@ namespace VoxHub.Services;
 
 public static class VoxelViewportRenderer
 {
+    public static Point3D GetModelCenter(VoxelModel model)
+    {
+        var voxels = EnumerateLeafChunks(model.RootChunk).SelectMany(x => x.Voxels).ToArray();
+        if (voxels.Length == 0)
+            return new Point3D(0, 0, 0);
+
+        var minX = voxels.Min(v => v.Position.X);
+        var minY = voxels.Min(v => v.Position.Y);
+        var minZ = voxels.Min(v => v.Position.Z);
+
+        var maxX = voxels.Max(v => v.Position.X) + 1;
+        var maxY = voxels.Max(v => v.Position.Y) + 1;
+        var maxZ = voxels.Max(v => v.Position.Z) + 1;
+
+        return new Point3D(
+            (minX + maxX) / 2.0,
+            (minY + maxY) / 2.0,
+            (minZ + maxZ) / 2.0);
+    }
+    
     public static void Render(Viewport3D viewport, VoxelModel model)
     {
         viewport.Children.Clear();
 
-        var group = new Model3DGroup
-        {
-            Children =
-            {
-                new AmbientLight(Colors.White)
-            }
-        };
+        var group = new Model3DGroup();
+        group.Children.Add(new AmbientLight(Colors.White));
 
         foreach (var leaf in EnumerateLeafChunks(model.RootChunk))
         {
+            var chunkCenter = new Point3D(
+                leaf.Origin.X + leaf.Size.X / 2.0,
+                leaf.Origin.Y + leaf.Size.Y / 2.0,
+                leaf.Origin.Z + leaf.Size.Z / 2.0);
+
             foreach (var colorGroup in leaf.Voxels
                          .Where(v => v.PaletteIndex != 0)
                          .GroupBy(v => v.PaletteIndex))
             {
-                var mesh = BuildMesh(colorGroup.Select(v => v.Position).ToArray());
+                var positions = colorGroup.Select(v => v.Position).ToArray();
+                var mesh = BuildMesh(positions);
                 if (mesh.Positions.Count == 0)
                     continue;
 
                 var color = GetPaletteColor(model, colorGroup.Key);
-                var material = new DiffuseMaterial(new SolidColorBrush(color));
-                material.Freeze();
 
+                // dark outline pass first
+                var outlineMaterial = CreateMaterial(Color.FromArgb(255, 35, 35, 35));
                 group.Children.Add(new GeometryModel3D
                 {
                     Geometry = mesh,
-                    Material = material,
-                    BackMaterial = material
+                    Material = outlineMaterial,
+                    BackMaterial = outlineMaterial,
+                    Transform = new ScaleTransform3D(1.03, 1.03, 1.03, chunkCenter.X, chunkCenter.Y, chunkCenter.Z)
+                });
+
+                // main colored pass
+                var mainMaterial = CreateMaterial(color);
+                group.Children.Add(new GeometryModel3D
+                {
+                    Geometry = mesh,
+                    Material = mainMaterial,
+                    BackMaterial = mainMaterial
                 });
             }
         }
 
-        group.Freeze();
         viewport.Children.Add(new ModelVisual3D { Content = group });
+    }
+
+    private static Material CreateMaterial(Color color)
+    {
+        var brush = new SolidColorBrush(color);
+        brush.Freeze();
+
+        var material = new MaterialGroup();
+        material.Children.Add(new EmissiveMaterial(brush));
+        material.Children.Add(new DiffuseMaterial(brush));
+        material.Freeze();
+
+        return material;
     }
 
     private static IEnumerable<ChunkNode> EnumerateLeafChunks(ChunkNode node)
@@ -59,13 +105,10 @@ public static class VoxelViewportRenderer
             yield return leaf;
     }
 
-    // One mesh per color group, with only visible faces.
     private static MeshGeometry3D BuildMesh(Int3[] voxels)
     {
         var mesh = new MeshGeometry3D();
-
-        if (voxels.Length == 0)
-            return mesh;
+        if (voxels.Length == 0) return mesh;
 
         var occupied = voxels.ToHashSet();
 
@@ -93,37 +136,37 @@ public static class VoxelViewportRenderer
 
         switch (face)
         {
-            case 0: // +X
+            case 0:
                 a = new Point3D(x + 1, y, z);
                 b = new Point3D(x + 1, y + 1, z);
                 c = new Point3D(x + 1, y + 1, z + 1);
                 d = new Point3D(x + 1, y, z + 1);
                 break;
-            case 1: // -X
+            case 1:
                 a = new Point3D(x, y, z);
                 b = new Point3D(x, y, z + 1);
                 c = new Point3D(x, y + 1, z + 1);
                 d = new Point3D(x, y + 1, z);
                 break;
-            case 2: // +Y
+            case 2:
                 a = new Point3D(x, y + 1, z);
                 b = new Point3D(x, y + 1, z + 1);
                 c = new Point3D(x + 1, y + 1, z + 1);
                 d = new Point3D(x + 1, y + 1, z);
                 break;
-            case 3: // -Y
+            case 3:
                 a = new Point3D(x, y, z);
                 b = new Point3D(x + 1, y, z);
                 c = new Point3D(x + 1, y, z + 1);
                 d = new Point3D(x, y, z + 1);
                 break;
-            case 4: // +Z
+            case 4:
                 a = new Point3D(x, y, z + 1);
                 b = new Point3D(x + 1, y, z + 1);
                 c = new Point3D(x + 1, y + 1, z + 1);
                 d = new Point3D(x, y + 1, z + 1);
                 break;
-            default: // -Z
+            default:
                 a = new Point3D(x, y, z);
                 b = new Point3D(x, y + 1, z);
                 c = new Point3D(x + 1, y + 1, z);
@@ -141,7 +184,6 @@ public static class VoxelViewportRenderer
         mesh.TriangleIndices.Add(start);
         mesh.TriangleIndices.Add(start + 1);
         mesh.TriangleIndices.Add(start + 2);
-
         mesh.TriangleIndices.Add(start);
         mesh.TriangleIndices.Add(start + 2);
         mesh.TriangleIndices.Add(start + 3);
@@ -151,7 +193,7 @@ public static class VoxelViewportRenderer
     {
         var index = paletteIndex - 1;
         if (index < 0 || index >= model.Palette.Count)
-            return Colors.White;
+            index = 0;
 
         var c = model.Palette[index];
         return Color.FromArgb(c.A, c.R, c.G, c.B);

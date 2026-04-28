@@ -56,12 +56,18 @@
                         Click="Download_Click" />
             </StackPanel>
 
-            <Viewport3D x:Name="Viewport" Grid.Row="1">
+            <Viewport3D x:Name="Viewport"
+                        Grid.Row="1"
+                        MouseDown="Viewport_MouseDown"
+                        MouseMove="Viewport_MouseMove"
+                        MouseUp="Viewport_MouseUp"
+                        MouseWheel="Viewport_MouseWheel">
                 <Viewport3D.Camera>
-                    <PerspectiveCamera Position="50,50,100"
-                                       LookDirection="-50,-50,-100"
+                    <PerspectiveCamera x:Name="Camera"
+                                       Position="0,0,120"
+                                       LookDirection="0,0,-120"
                                        UpDirection="0,1,0"
-                                       FieldOfView="60" />
+                                       FieldOfView="60"/>
                 </Viewport3D.Camera>
             </Viewport3D>
         </Grid>
