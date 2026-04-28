@@ -202,6 +202,6 @@ public static class VoxelViewportRenderer
             index = 0;
 
         var c = model.Palette[index];
-        return Color.FromArgb(c.A, c.R, c.G, c.B);
+        return Color.FromArgb(c.A, c.B, c.G, c.R);
     }
 }
