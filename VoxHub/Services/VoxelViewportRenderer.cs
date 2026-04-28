@@ -39,11 +39,6 @@ public static class VoxelViewportRenderer
 
         foreach (var leaf in EnumerateLeafChunks(model.RootChunk))
         {
-            var chunkCenter = new Point3D(
-                leaf.Origin.X + leaf.Size.X / 2.0,
-                leaf.Origin.Y + leaf.Size.Y / 2.0,
-                leaf.Origin.Z + leaf.Size.Z / 2.0);
-
             foreach (var colorGroup in leaf.Voxels
                          .Where(v => v.PaletteIndex != 0)
                          .GroupBy(v => v.PaletteIndex))
@@ -55,30 +50,27 @@ public static class VoxelViewportRenderer
 
                 var color = GetPaletteColor(model, colorGroup.Key);
 
-// основной материал
-                var mainMaterial = new DiffuseMaterial(new SolidColorBrush(color));
-
-// outline материал (полупрозрачный!)
-                var outlineMaterial = new DiffuseMaterial(
-                    new SolidColorBrush(Color.FromArgb(120, 20, 20, 20))); // не чёрный, а мягкий тёмный
-
-// 1. СНАЧАЛА основной меш
+                // main colored pass
+                var mainMaterial = CreateMaterial(color);
                 group.Children.Add(new GeometryModel3D
                 {
                     Geometry = mesh,
                     Material = mainMaterial,
                     BackMaterial = mainMaterial
                 });
-
-// 2. ПОТОМ outline (слегка увеличенный)
-                group.Children.Add(new GeometryModel3D
+                
+                // edge lines только на границах граней (внешние ребра)
+                var edgeMesh = BuildExternalEdgeMesh(positions);
+                if (edgeMesh.Positions.Count > 0)
                 {
-                    Geometry = mesh,
-                    Material = outlineMaterial,
-                    BackMaterial = outlineMaterial,
-                    Transform = new ScaleTransform3D(1.05, 1.05, 1.05,
-                        chunkCenter.X, chunkCenter.Y, chunkCenter.Z)
-                });
+                    var edgeMaterial = new DiffuseMaterial(new SolidColorBrush(Color.FromArgb(255, 40, 40, 40)));
+                    group.Children.Add(new GeometryModel3D
+                    {
+                        Geometry = edgeMesh,
+                        Material = edgeMaterial,
+                        BackMaterial = edgeMaterial
+                    });
+                }
             }
         }
 
@@ -130,6 +122,172 @@ public static class VoxelViewportRenderer
 
         mesh.Freeze();
         return mesh;
+    }
+
+    private static MeshGeometry3D BuildExternalEdgeMesh(Int3[] voxels)
+    {
+        var mesh = new MeshGeometry3D();
+        if (voxels.Length == 0) return mesh;
+
+        var occupied = voxels.ToHashSet();
+        var externalEdges = new HashSet<(Point3D, Point3D)>();
+
+        // Собираем все ребра, которые находятся только на внешних гранях
+        foreach (var p in voxels)
+        {
+            var x = p.X;
+            var y = p.Y;
+            var z = p.Z;
+
+            // Проверяем каждую грань
+            // Грань +X
+            if (!occupied.Contains(new Int3(p.X + 1, p.Y, p.Z)))
+            {
+                AddFaceEdges(externalEdges, new[]
+                {
+                    new Point3D(x + 1, y, z),
+                    new Point3D(x + 1, y + 1, z),
+                    new Point3D(x + 1, y + 1, z + 1),
+                    new Point3D(x + 1, y, z + 1)
+                });
+            }
+
+            // Грань -X
+            if (!occupied.Contains(new Int3(p.X - 1, p.Y, p.Z)))
+            {
+                AddFaceEdges(externalEdges, new[]
+                {
+                    new Point3D(x, y, z),
+                    new Point3D(x, y, z + 1),
+                    new Point3D(x, y + 1, z + 1),
+                    new Point3D(x, y + 1, z)
+                });
+            }
+
+            // Грань +Y
+            if (!occupied.Contains(new Int3(p.X, p.Y + 1, p.Z)))
+            {
+                AddFaceEdges(externalEdges, new[]
+                {
+                    new Point3D(x, y + 1, z),
+                    new Point3D(x, y + 1, z + 1),
+                    new Point3D(x + 1, y + 1, z + 1),
+                    new Point3D(x + 1, y + 1, z)
+                });
+            }
+
+            // Грань -Y
+            if (!occupied.Contains(new Int3(p.X, p.Y - 1, p.Z)))
+            {
+                AddFaceEdges(externalEdges, new[]
+                {
+                    new Point3D(x, y, z),
+                    new Point3D(x + 1, y, z),
+                    new Point3D(x + 1, y, z + 1),
+                    new Point3D(x, y, z + 1)
+                });
+            }
+
+            // Грань +Z
+            if (!occupied.Contains(new Int3(p.X, p.Y, p.Z + 1)))
+            {
+                AddFaceEdges(externalEdges, new[]
+                {
+                    new Point3D(x, y, z + 1),
+                    new Point3D(x + 1, y, z + 1),
+                    new Point3D(x + 1, y + 1, z + 1),
+                    new Point3D(x, y + 1, z + 1)
+                });
+            }
+
+            // Грань -Z
+            if (!occupied.Contains(new Int3(p.X, p.Y, p.Z - 1)))
+            {
+                AddFaceEdges(externalEdges, new[]
+                {
+                    new Point3D(x, y, z),
+                    new Point3D(x, y + 1, z),
+                    new Point3D(x + 1, y + 1, z),
+                    new Point3D(x + 1, y, z)
+                });
+            }
+        }
+
+        // Добавляем ребра в меш как маленькие цилиндры
+        foreach (var (start, end) in externalEdges)
+        {
+            AddEdgeLine(mesh, start, end);
+        }
+
+        mesh.Freeze();
+        return mesh;
+    }
+
+    private static void AddFaceEdges(HashSet<(Point3D, Point3D)> edges, Point3D[] corners)
+    {
+        // 4 ребра квадратной грани
+        AddEdge(edges, corners[0], corners[1]);
+        AddEdge(edges, corners[1], corners[2]);
+        AddEdge(edges, corners[2], corners[3]);
+        AddEdge(edges, corners[3], corners[0]);
+    }
+
+    private static void AddEdge(HashSet<(Point3D, Point3D)> edges, Point3D a, Point3D b)
+    {
+        // Нормализуем ребро чтобы избежать дубликатов
+        var edge = (a.X + a.Y + a.Z) < (b.X + b.Y + b.Z) ? (a, b) : (b, a);
+        edges.Add(edge);
+    }
+
+    private static void AddEdgeLine(MeshGeometry3D mesh, Point3D start, Point3D end)
+    {
+        const double thickness = 0.08;
+        var direction = end - start;
+        
+        if (direction.Length == 0)
+            return;
+
+        direction.Normalize();
+        
+        Vector3D up = new Vector3D(0, 1, 0);
+        if (Math.Abs(Vector3D.DotProduct(direction, up)) > 0.9)
+            up = new Vector3D(1, 0, 0);
+
+        var right = Vector3D.CrossProduct(direction, up);
+        right.Normalize();
+        up = Vector3D.CrossProduct(right, direction);
+        up.Normalize();
+
+        right *= thickness / 2;
+        up *= thickness / 2;
+
+        var idx = mesh.Positions.Count;
+
+        mesh.Positions.Add(start + right + up);
+        mesh.Positions.Add(start - right + up);
+        mesh.Positions.Add(start - right - up);
+        mesh.Positions.Add(start + right - up);
+
+        mesh.Positions.Add(end + right + up);
+        mesh.Positions.Add(end - right + up);
+        mesh.Positions.Add(end - right - up);
+        mesh.Positions.Add(end + right - up);
+
+        // Top
+        mesh.TriangleIndices.Add(idx); mesh.TriangleIndices.Add(idx + 4); mesh.TriangleIndices.Add(idx + 1);
+        mesh.TriangleIndices.Add(idx + 1); mesh.TriangleIndices.Add(idx + 4); mesh.TriangleIndices.Add(idx + 5);
+
+        // Bottom
+        mesh.TriangleIndices.Add(idx + 2); mesh.TriangleIndices.Add(idx + 6); mesh.TriangleIndices.Add(idx + 3);
+        mesh.TriangleIndices.Add(idx + 3); mesh.TriangleIndices.Add(idx + 6); mesh.TriangleIndices.Add(idx + 7);
+
+        // Front
+        mesh.TriangleIndices.Add(idx); mesh.TriangleIndices.Add(idx + 3); mesh.TriangleIndices.Add(idx + 4);
+        mesh.TriangleIndices.Add(idx + 4); mesh.TriangleIndices.Add(idx + 3); mesh.TriangleIndices.Add(idx + 7);
+
+        // Back
+        mesh.TriangleIndices.Add(idx + 1); mesh.TriangleIndices.Add(idx + 5); mesh.TriangleIndices.Add(idx + 2);
+        mesh.TriangleIndices.Add(idx + 2); mesh.TriangleIndices.Add(idx + 5); mesh.TriangleIndices.Add(idx + 6);
     }
 
     private static void AddFace(MeshGeometry3D mesh, Int3 p, int face)
