@@ -109,8 +109,8 @@ public partial class MainWindow : Window
         var dx = current.X - _lastMouse.X;
         var dy = current.Y - _lastMouse.Y;
 
-        _yaw += dx * 0.5;
-        _pitch -= dy * 0.5;
+        _yaw -= dx * 0.5;
+        _pitch += dy * 0.5;
         _pitch = Math.Clamp(_pitch, -89, 89);
 
         _lastMouse = current;
