@@ -55,23 +55,29 @@ public static class VoxelViewportRenderer
 
                 var color = GetPaletteColor(model, colorGroup.Key);
 
-                // dark outline pass first
-                var outlineMaterial = CreateMaterial(Color.FromArgb(255, 35, 35, 35));
-                group.Children.Add(new GeometryModel3D
-                {
-                    Geometry = mesh,
-                    Material = outlineMaterial,
-                    BackMaterial = outlineMaterial,
-                    Transform = new ScaleTransform3D(1.03, 1.03, 1.03, chunkCenter.X, chunkCenter.Y, chunkCenter.Z)
-                });
+// основной материал
+                var mainMaterial = new DiffuseMaterial(new SolidColorBrush(color));
 
-                // main colored pass
-                var mainMaterial = CreateMaterial(color);
+// outline материал (полупрозрачный!)
+                var outlineMaterial = new DiffuseMaterial(
+                    new SolidColorBrush(Color.FromArgb(120, 20, 20, 20))); // не чёрный, а мягкий тёмный
+
+// 1. СНАЧАЛА основной меш
                 group.Children.Add(new GeometryModel3D
                 {
                     Geometry = mesh,
                     Material = mainMaterial,
                     BackMaterial = mainMaterial
+                });
+
+// 2. ПОТОМ outline (слегка увеличенный)
+                group.Children.Add(new GeometryModel3D
+                {
+                    Geometry = mesh,
+                    Material = outlineMaterial,
+                    BackMaterial = outlineMaterial,
+                    Transform = new ScaleTransform3D(1.05, 1.05, 1.05,
+                        chunkCenter.X, chunkCenter.Y, chunkCenter.Z)
                 });
             }
         }
