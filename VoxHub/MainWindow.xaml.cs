@@ -197,26 +197,6 @@ public partial class MainWindow : Window
         }
     }
     
-    private void CommitFromGraph_Click(object sender, RoutedEventArgs e)
-    {
-        if (_viewModel.SelectedVersion is null)
-        {
-            MessageBox.Show("Please select a version first");
-            return;
-        }
-
-        var dialog = new OpenFileDialog
-        {
-            Filter = "VOX files (*.vox)|*.vox"
-        };
-
-        if (dialog.ShowDialog() != true)
-            return;
-
-        CommitMessageBox.Text = "Updated model";
-        // Focus на message box и ожидаем нажатия Confirm Commit
-    }
-    
     private bool _rotating;
     private Point _lastMouse;
     private double _yaw = 45;
