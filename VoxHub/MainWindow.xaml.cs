@@ -24,11 +24,26 @@ public partial class MainWindow : Window
         DataContext = _viewModel;
 
         Loaded += MainWindow_Loaded;
+        SizeChanged += (s, e) => VersionGraph.DrawGraph(_viewModel.Versions, _viewModel.SelectedVersion?.Id);
+
     }
 
     private async void MainWindow_Loaded(object sender, RoutedEventArgs e)
     {
         await _viewModel.LoadAsync();
+    
+        // Подписываемся на изменение versions и selectedVersion
+        _viewModel.PropertyChanged += (s, e) =>
+        {
+            if (e.PropertyName == nameof(_viewModel.SelectedVersion) || 
+                e.PropertyName == nameof(_viewModel.Versions))
+            {
+                VersionGraph.DrawGraph(_viewModel.Versions, _viewModel.SelectedVersion?.Id);
+            }
+        };
+    
+        // Рисуем граф после загрузки
+        VersionGraph.DrawGraph(_viewModel.Versions, _viewModel.SelectedVersion?.Id);
     }
 
     private async void Download_Click(object sender, RoutedEventArgs e)
@@ -116,7 +131,10 @@ public partial class MainWindow : Window
             await vm.UploadCommitAsync(chunkSize, dialog.FileName, commitMessage);
             
             UploadStatusText.Text = "✓ Commit uploaded successfully!";
+            VersionGraph.DrawGraph(vm.Versions, vm.SelectedVersion?.Id);
             MessageBox.Show("Commit created successfully!");
+            
+            
         }
         catch (Exception ex)
         {

@@ -121,7 +121,7 @@
                     <ColumnDefinition Width="300" />
                 </Grid.ColumnDefinitions>
 
-                <!-- Version Graph Placeholder -->
+                <!-- Version Graph -->
                 <Border Grid.Column="0"
                         CornerRadius="12"
                         Background="#151B23"
@@ -129,11 +129,7 @@
                         BorderThickness="1"
                         Padding="15"
                         Margin="0, 0, 15, 0">
-                    <TextBlock Text="Version graph (coming soon)"
-                               Foreground="#7a8390"
-                               HorizontalAlignment="Center"
-                               VerticalAlignment="Center"
-                               FontSize="12" />
+                    <local:VersionGraphControl x:Name="VersionGraph" />
                 </Border>
 
                 <!-- RIGHT PANEL: Create commit -->
