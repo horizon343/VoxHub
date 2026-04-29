@@ -1,4 +1,6 @@
-﻿using System.Windows.Controls;
+﻿using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Shapes;
 using VoxHub.Models;
@@ -10,6 +12,8 @@ public partial class VersionGraphControl : UserControl
     private const double NodeRadius = 8;
     private const double NodeSpacing = 50;
     private const double LevelSpacing = 40;
+
+    public event Action<Guid>? VersionSelected;
 
     public VersionGraphControl()
     {
@@ -68,11 +72,7 @@ public partial class VersionGraphControl : UserControl
 
     private void DrawConnections(IReadOnlyList<VersionListItem> versions, Dictionary<Guid, (int RowIndex, int ColumnIndex)> levels)
     {
-        // В реальной системе здесь нужно отрисовать связи между parent и child версиями
-        // Но для этого нужна информация о родительских версиях в VersionListItem
-        // Пока просто рисуем линию между соседними
-        
-        var brush = new SolidColorBrush(Color.FromArgb(255, 61, 68, 77)); // полупрозрачный цвет
+        var brush = new SolidColorBrush(Color.FromArgb(100, 61, 68, 77)); // полупрозрачный цвет
         
         for (int i = 0; i < versions.Count - 1; i++)
         {
@@ -85,7 +85,7 @@ public partial class VersionGraphControl : UserControl
             double x2 = 20 + next.ColumnIndex * NodeSpacing;
             double y2 = (GraphCanvas.ActualHeight / 2) + next.RowIndex * LevelSpacing - (versions.Count * LevelSpacing / 2);
 
-            var line = new Line()
+            var line = new Line
             {
                 X1 = x1,
                 Y1 = y1,
@@ -110,18 +110,27 @@ public partial class VersionGraphControl : UserControl
             Height = NodeRadius * 2,
             Fill = new SolidColorBrush(isSelected ? Color.FromArgb(255, 31, 113, 235) : Color.FromArgb(255, 88, 166, 255)),
             Stroke = new SolidColorBrush(Color.FromArgb(255, 255, 255, 255)),
-            StrokeThickness = isSelected ? 3 : 1
+            StrokeThickness = isSelected ? 3 : 1,
+            Cursor = Cursors.Hand
         };
 
         Canvas.SetLeft(circle, x - NodeRadius);
         Canvas.SetTop(circle, y - NodeRadius);
-        GraphCanvas.Children.Add(circle);
 
-        // Тултип с версией
+        // Клик по версии
+        circle.MouseLeftButtonDown += (s, e) =>
+        {
+            VersionSelected?.Invoke(versionId);
+            e.Handled = true;
+        };
+
+        // Тултип
         circle.MouseEnter += (s, e) =>
         {
             var tooltip = new ToolTip { Content = display };
             circle.ToolTip = tooltip;
         };
+
+        GraphCanvas.Children.Add(circle);
     }
 }

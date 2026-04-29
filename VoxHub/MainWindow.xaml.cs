@@ -25,31 +25,46 @@ public partial class MainWindow : Window
 
         Loaded += MainWindow_Loaded;
         SizeChanged += (s, e) => VersionGraph.DrawGraph(_viewModel.Versions, _viewModel.SelectedVersion?.Id);
-
     }
 
     private async void MainWindow_Loaded(object sender, RoutedEventArgs e)
     {
         await _viewModel.LoadAsync();
-    
+        
+        // Подписываемся на события графа версий
+        VersionGraph.VersionSelected += OnVersionSelected;
+        
         // Подписываемся на изменение versions и selectedVersion
         _viewModel.PropertyChanged += (s, e) =>
         {
-            if (e.PropertyName == nameof(_viewModel.SelectedVersion) || 
-                e.PropertyName == nameof(_viewModel.Versions))
+            if (e.PropertyName == nameof(_viewModel.Versions) || 
+                e.PropertyName == nameof(_viewModel.SelectedVersion))
             {
                 VersionGraph.DrawGraph(_viewModel.Versions, _viewModel.SelectedVersion?.Id);
             }
         };
-    
+        
         // Рисуем граф после загрузки
         VersionGraph.DrawGraph(_viewModel.Versions, _viewModel.SelectedVersion?.Id);
+    }
+
+    private void OnVersionSelected(Guid versionId)
+    {
+        // Ищем версию в списке и выбираем её
+        var version = _viewModel.Versions.FirstOrDefault(v => v.Id == versionId);
+        if (version != null)
+        {
+            _viewModel.SelectedVersion = version;
+        }
     }
 
     private async void Download_Click(object sender, RoutedEventArgs e)
     {
         if (DataContext is not MainViewModel vm || vm.SelectedVersion is null)
+        {
+            MessageBox.Show("Please select a version first");
             return;
+        }
 
         var dialog = new SaveFileDialog
         {
@@ -111,6 +126,12 @@ public partial class MainWindow : Window
 
     private async void CreateCommit_Click(object sender, RoutedEventArgs e)
     {
+        if (_viewModel.SelectedVersion is null)
+        {
+            MessageBox.Show("Please select a version first");
+            return;
+        }
+
         var dialog = new OpenFileDialog
         {
             Filter = "VOX files (*.vox)|*.vox"
@@ -133,14 +154,67 @@ public partial class MainWindow : Window
             UploadStatusText.Text = "✓ Commit uploaded successfully!";
             VersionGraph.DrawGraph(vm.Versions, vm.SelectedVersion?.Id);
             MessageBox.Show("Commit created successfully!");
-            
-            
         }
         catch (Exception ex)
         {
             UploadStatusText.Text = $"✗ Error: {ex.Message}";
             MessageBox.Show($"Error: {ex.Message}");
         }
+    }
+
+    private async void DownloadFromGraph_Click(object sender, RoutedEventArgs e)
+    {
+        if (_viewModel.SelectedVersion is null)
+            return;
+
+        var dialog = new SaveFileDialog
+        {
+            Filter = "VOX files (*.vox)|*.vox",
+            FileName = $"model_{_viewModel.SelectedVersion.Id:N}.vox"
+        };
+
+        if (dialog.ShowDialog() != true)
+            return;
+
+        try
+        {
+            await _viewModel.DownloadSelectedVersionAsync(dialog.FileName);
+
+            await using var fs = File.OpenRead(dialog.FileName);
+            var importer = new VoxModelImporter();
+            var model = await importer.ImportAsync(fs);
+
+            VoxelViewportRenderer.Render(Viewport, model);
+            
+            _target = VoxelViewportRenderer.GetModelCenter(model);
+            UpdateCamera();
+
+            MessageBox.Show("Version downloaded and rendered.");
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Error: {ex.Message}");
+        }
+    }
+    
+    private void CommitFromGraph_Click(object sender, RoutedEventArgs e)
+    {
+        if (_viewModel.SelectedVersion is null)
+        {
+            MessageBox.Show("Please select a version first");
+            return;
+        }
+
+        var dialog = new OpenFileDialog
+        {
+            Filter = "VOX files (*.vox)|*.vox"
+        };
+
+        if (dialog.ShowDialog() != true)
+            return;
+
+        CommitMessageBox.Text = "Updated model";
+        // Focus на message box и ожидаем нажатия Confirm Commit
     }
     
     private bool _rotating;

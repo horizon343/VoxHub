@@ -14,6 +14,7 @@
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="300" />
             <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="300" />
         </Grid.ColumnDefinitions>
 
         <!-- LEFT PANEL: Models list -->
@@ -108,17 +109,16 @@
         </Grid>
 
         <!-- CENTER PANEL: Graph (placeholder) + Create commit -->
-        <Grid Grid.Column="1">
+        <Grid Grid.Column="1" Margin="15, 0, 15, 0">
             <Grid.RowDefinitions>
                 <RowDefinition Height="220" />
                 <RowDefinition Height="*" />
             </Grid.RowDefinitions>
 
-            <Grid Grid.Row="0"
-                  Margin="15, 0, 0, 15">
+            <Grid Grid.Row="0" Margin="0, 0, 0, 15">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="300" />
+                    <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
 
                 <!-- Version Graph -->
@@ -127,71 +127,8 @@
                         Background="#151B23"
                         BorderBrush="#3D444D"
                         BorderThickness="1"
-                        Padding="15"
-                        Margin="0, 0, 15, 0">
-                    <local:VersionGraphControl x:Name="VersionGraph" />
-                </Border>
-
-                <!-- RIGHT PANEL: Create commit -->
-                <Border Grid.Column="1"
-                        CornerRadius="12"
-                        Background="#151B23"
-                        BorderBrush="#3D444D"
-                        BorderThickness="1"
                         Padding="15">
-                    <StackPanel>
-                        <TextBlock Text="Create commit"
-                                   FontSize="16"
-                                   FontWeight="SemiBold"
-                                   Foreground="#F0F6FC"
-                                   HorizontalAlignment="Center" />
-
-                        <Border CornerRadius="12"
-                                Background="#0D1117"
-                                BorderBrush="#3D444D"
-                                BorderThickness="1"
-                                Margin="0, 15">
-                            <TextBox x:Name="CommitMessageBox"
-                                     Background="Transparent"
-                                     BorderThickness="0"
-                                     Foreground="#F0F6FC"
-                                     AcceptsReturn="True"
-                                     Height="44"
-                                     FontSize="16"
-                                     TextWrapping="Wrap"
-                                     VerticalScrollBarVisibility="Auto"
-                                     Margin="0,15"
-                                     Padding="10, 0"
-                                     CaretBrush="#F0F6FC" />
-                        </Border>
-
-                        <Button Content="Commit"
-                                Height="44"
-                                Background="#1F71EB"
-                                BorderThickness="0"
-                                Foreground="#F0F6FC"
-                                FontWeight="SemiBold"
-                                FontSize="16"
-                                Click="CreateCommit_Click">
-
-                            <Button.Template>
-                                <ControlTemplate TargetType="Button">
-                                    <Border Background="{TemplateBinding Background}"
-                                            CornerRadius="12">
-                                        <ContentPresenter HorizontalAlignment="Center"
-                                                          VerticalAlignment="Center" />
-                                    </Border>
-                                </ControlTemplate>
-                            </Button.Template>
-                        </Button>
-
-                        <TextBlock x:Name="UploadStatusText"
-                                   Text=""
-                                   Foreground="#16C60C"
-                                   Margin="0,12,0,0"
-                                   TextWrapping="Wrap"
-                                   FontSize="11" />
-                    </StackPanel>
+                    <local:VersionGraphControl x:Name="VersionGraph" />
                 </Border>
             </Grid>
 
@@ -201,8 +138,7 @@
                     Background="#151B23"
                     BorderBrush="#3D444D"
                     BorderThickness="1"
-                    Padding="15"
-                    Margin="15, 0 ,0, 0">
+                    Padding="15">
                 <Viewport3D x:Name="Viewport"
                             MouseDown="Viewport_MouseDown"
                             MouseMove="Viewport_MouseMove"
@@ -218,5 +154,125 @@
                 </Viewport3D>
             </Border>
         </Grid>
+        
+        <!-- RIGHT PANEL: Version actions + Create commit -->
+                <Border Grid.Column="2"
+                        CornerRadius="12"
+                        Background="#151B23"
+                        BorderBrush="#3D444D"
+                        BorderThickness="1"
+                        Padding="15">
+                    <StackPanel>
+                        <!-- Selected Version Info -->
+                        <TextBlock Text="Selected Version"
+                                   FontSize="14"
+                                   FontWeight="SemiBold"
+                                   Foreground="#F0F6FC"
+                                   HorizontalAlignment="Center"
+                                   Margin="0, 0, 0, 10" />
+
+                        <TextBlock Text="{Binding SelectedVersion.Display, StringFormat='{}{0}'}"
+                                   Foreground="#9198A1"
+                                   HorizontalAlignment="Center"
+                                   FontSize="11"
+                                   Margin="0, 0, 0, 15"
+                                   TextWrapping="Wrap" />
+
+                        <!-- Action Buttons -->
+                        <Button Content="⬇ Download"
+                                Height="40"
+                                Background="#238636"
+                                BorderThickness="0"
+                                Foreground="#F0F6FC"
+                                FontWeight="SemiBold"
+                                FontSize="14"
+                                Margin="0, 0, 0, 8"
+                                Click="DownloadFromGraph_Click">
+                            <Button.Template>
+                                <ControlTemplate TargetType="Button">
+                                    <Border Background="{TemplateBinding Background}"
+                                            CornerRadius="12">
+                                        <ContentPresenter HorizontalAlignment="Center"
+                                                          VerticalAlignment="Center" />
+                                    </Border>
+                                </ControlTemplate>
+                            </Button.Template>
+                        </Button>
+
+                        <Button Content="⬆ Create Commit"
+                                Height="40"
+                                Background="#1F71EB"
+                                BorderThickness="0"
+                                Foreground="#F0F6FC"
+                                FontWeight="SemiBold"
+                                FontSize="14"
+                                Margin="0, 0, 0, 15"
+                                Click="CommitFromGraph_Click">
+                            <Button.Template>
+                                <ControlTemplate TargetType="Button">
+                                    <Border Background="{TemplateBinding Background}"
+                                            CornerRadius="12">
+                                        <ContentPresenter HorizontalAlignment="Center"
+                                                          VerticalAlignment="Center" />
+                                    </Border>
+                                </ControlTemplate>
+                            </Button.Template>
+                        </Button>
+
+                        <!-- Divider -->
+                        <Separator Background="#3D444D" Margin="0, 10, 0, 10" />
+
+                        <!-- Commit Message Input (hidden by default, shows on button click) -->
+                        <TextBlock Text="Commit Message"
+                                   FontSize="12"
+                                   Foreground="#9198A1"
+                                   Margin="0, 0, 0, 6" />
+
+                        <Border CornerRadius="12"
+                                Background="#0D1117"
+                                BorderBrush="#3D444D"
+                                BorderThickness="1"
+                                Margin="0, 0, 0, 10">
+                            <TextBox x:Name="CommitMessageBox"
+                                     Background="Transparent"
+                                     BorderThickness="0"
+                                     Foreground="#F0F6FC"
+                                     AcceptsReturn="True"
+                                     Height="60"
+                                     FontSize="12"
+                                     TextWrapping="Wrap"
+                                     VerticalScrollBarVisibility="Auto"
+                                     Padding="10"
+                                     CaretBrush="#F0F6FC"
+                                     Text="Updated model" />
+                        </Border>
+
+                        <Button Content="Confirm Commit"
+                                Height="40"
+                                Background="#1F71EB"
+                                BorderThickness="0"
+                                Foreground="#F0F6FC"
+                                FontWeight="SemiBold"
+                                FontSize="14"
+                                Click="CreateCommit_Click">
+                            <Button.Template>
+                                <ControlTemplate TargetType="Button">
+                                    <Border Background="{TemplateBinding Background}"
+                                            CornerRadius="12">
+                                        <ContentPresenter HorizontalAlignment="Center"
+                                                          VerticalAlignment="Center" />
+                                    </Border>
+                                </ControlTemplate>
+                            </Button.Template>
+                        </Button>
+
+                        <TextBlock x:Name="UploadStatusText"
+                                   Text=""
+                                   Foreground="#16C60C"
+                                   Margin="0, 12, 0, 0"
+                                   TextWrapping="Wrap"
+                                   FontSize="11" />
+                    </StackPanel>
+                </Border>
     </Grid>
 </Window>
