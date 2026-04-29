@@ -34,16 +34,6 @@ public partial class MainWindow : Window
         // Подписываемся на события графа версий
         VersionGraph.VersionSelected += OnVersionSelected;
         
-        // Подписываемся на изменение versions и selectedVersion
-        _viewModel.PropertyChanged += (s, e) =>
-        {
-            if (e.PropertyName == nameof(_viewModel.Versions) || 
-                e.PropertyName == nameof(_viewModel.SelectedVersion))
-            {
-                VersionGraph.DrawGraph(_viewModel.Versions, _viewModel.SelectedVersion?.Id);
-            }
-        };
-        
         // Рисуем граф после загрузки
         VersionGraph.DrawGraph(_viewModel.Versions, _viewModel.SelectedVersion?.Id);
     }
@@ -152,7 +142,7 @@ public partial class MainWindow : Window
             await vm.UploadCommitAsync(chunkSize, dialog.FileName, commitMessage);
             
             UploadStatusText.Text = "✓ Commit uploaded successfully!";
-            VersionGraph.DrawGraph(vm.Versions, vm.SelectedVersion?.Id);
+            VersionGraph.UpdateGraph(vm.Versions, vm.SelectedVersion?.Id);
             MessageBox.Show("Commit created successfully!");
         }
         catch (Exception ex)

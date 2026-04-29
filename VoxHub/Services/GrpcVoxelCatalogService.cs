@@ -46,7 +46,8 @@ public sealed class GrpcVoxelCatalogService : IVoxelCatalogService
         return response.Versions
             .Select(x => new VersionListItem(
                 Guid.Parse(x.Id),
-                x.Kind))
+                x.Kind,
+                string.IsNullOrEmpty(x.ParentVersionId) ? null : Guid.Parse(x.ParentVersionId)))
             .ToList();
     }
 
