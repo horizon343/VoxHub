@@ -18,6 +18,8 @@ public partial class VersionGraphControl : UserControl
     private Point _panStart;
     private Vector _panOffset = new(0, 0);
     private bool _isPanning;
+    private IReadOnlyList<VersionListItem>? _currentVersions;
+    private Guid? _currentSelectedVersionId;
 
     public VersionGraphControl()
     {
@@ -31,6 +33,9 @@ public partial class VersionGraphControl : UserControl
 
     public void DrawGraph(IReadOnlyList<VersionListItem> versions, Guid? selectedVersionId)
     {
+        _currentVersions = versions;
+        _currentSelectedVersionId = selectedVersionId;
+
         GraphCanvas.Children.Clear();
 
         if (versions.Count == 0)
@@ -194,7 +199,7 @@ public partial class VersionGraphControl : UserControl
 
     private void GraphCanvas_MouseMove(object sender, MouseEventArgs e)
     {
-        if (!_isPanning)
+        if (!_isPanning || _currentVersions == null)
             return;
 
         var currentPosition = e.GetPosition(GraphCanvas);
@@ -203,11 +208,7 @@ public partial class VersionGraphControl : UserControl
         _panOffset += delta;
         _panStart = currentPosition;
 
-        var versions = GraphCanvas.Tag as IReadOnlyList<VersionListItem>;
-        if (versions != null)
-        {
-            RedrawGraph(versions, null);
-        }
+        RedrawGraph(_currentVersions, _currentSelectedVersionId);
     }
 
     private void GraphCanvas_MouseUp(object sender, MouseButtonEventArgs e)
@@ -237,7 +238,6 @@ public partial class VersionGraphControl : UserControl
 
     public void UpdateGraph(IReadOnlyList<VersionListItem> versions, Guid? selectedVersionId)
     {
-        GraphCanvas.Tag = versions;
         DrawGraph(versions, selectedVersionId);
     }
 }

@@ -30,12 +30,22 @@ public partial class MainWindow : Window
     private async void MainWindow_Loaded(object sender, RoutedEventArgs e)
     {
         await _viewModel.LoadAsync();
-        
+    
         // Подписываемся на события графа версий
         VersionGraph.VersionSelected += OnVersionSelected;
-        
+    
+        // Подписываемся на изменения в ViewModel
+        _viewModel.PropertyChanged += (s, e) =>
+        {
+            if (e.PropertyName == nameof(_viewModel.Versions) || 
+                e.PropertyName == nameof(_viewModel.SelectedVersion))
+            {
+                VersionGraph.UpdateGraph(_viewModel.Versions, _viewModel.SelectedVersion?.Id);
+            }
+        };
+    
         // Рисуем граф после загрузки
-        VersionGraph.DrawGraph(_viewModel.Versions, _viewModel.SelectedVersion?.Id);
+        VersionGraph.UpdateGraph(_viewModel.Versions, _viewModel.SelectedVersion?.Id);
     }
 
     private void OnVersionSelected(Guid versionId)
