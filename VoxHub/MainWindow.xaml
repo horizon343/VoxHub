@@ -6,112 +6,221 @@
         xmlns:local="clr-namespace:VoxHub"
         mc:Ignorable="d"
         Title="VoxHub Client"
-        Width="1200"
-        Height="800"
-        WindowStartupLocation="CenterScreen">
-    <Grid Background="#F5F5F5">
+        Width="1400"
+        Height="900"
+        WindowStartupLocation="CenterScreen"
+        Background="#0D1117">
+    <Grid Margin="15">
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="320" />
+            <ColumnDefinition Width="300" />
             <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
 
-        <!-- Left panel -->
-        <Border Grid.Column="0"
-                Background="White"
-                BorderBrush="#DDDDDD"
-                BorderThickness="0,0,1,0"
-                Padding="12">
-            <ScrollViewer>
+        <!-- LEFT PANEL: Models list -->
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <Border
+                Grid.Row="0"
+                CornerRadius="12"
+                Background="#151B23"
+                BorderBrush="#3D444D"
+                BorderThickness="1"
+                Padding="15"
+                Margin="0, 0, 0, 15">
                 <StackPanel>
-                    <TextBlock Text="Models / Versions"
+                    <TextBlock Text="All models"
                                FontSize="16"
                                FontWeight="SemiBold"
-                               Margin="0,0,0,12" />
+                               Foreground="#F0F6FC"
+                               HorizontalAlignment="Center"
+                               Margin="0, 0, 0, 15" />
 
-                    <!-- Upload Snapshot Section -->
-                    <TextBlock Text="Upload Snapshot"
-                               FontWeight="SemiBold"
-                               Margin="0,0,0,6" />
-                    <TextBlock Text="Model name" />
-                    <TextBox x:Name="ModelNameBox" Text="test-model" Margin="0,4,0,6" />
-
-                    <TextBlock Text="Chunk size" />
-                    <TextBox x:Name="ChunkSizeBox" Text="16" Margin="0,4,0,12" />
-                    <Button Content="Upload snapshot"
-                            Height="32"
-                            Margin="0,0,0,16"
-                            Click="UploadSnapshot_Click" />
-
-                    <!-- Models Section -->
-                    <TextBlock Text="Models" FontWeight="SemiBold" Margin="0,0,0,6" />
-                    <ListBox Height="200"
-                             ItemsSource="{Binding Models}"
+                    <ListBox ItemsSource="{Binding Models}"
                              SelectedItem="{Binding SelectedModel}"
-                             DisplayMemberPath="Name"
-                             Margin="0,0,0,12" />
-
-                    <!-- Versions Section -->
-                    <TextBlock Text="Versions" FontWeight="SemiBold" Margin="0,0,0,6" />
-                    <ListBox Height="150"
-                             ItemsSource="{Binding Versions}"
-                             SelectedItem="{Binding SelectedVersion}"
-                             DisplayMemberPath="Display"
-                             Margin="0,0,0,12" />
-
-                    <!-- Create Commit Section -->
-                    <TextBlock Text="Create Commit"
-                               FontWeight="SemiBold"
-                               Margin="0,0,0,6" />
-                    <TextBlock Text="Commit message" />
-                    <TextBox x:Name="CommitMessageBox"
-                             Text="Updated model"
-                             Margin="0,4,0,12"
-                             AcceptsReturn="True"
-                             Height="60" />
-
-                    <Button x:Name="CreateCommitButton"
-                            Content="Create commit"
-                            Height="32"
-                            Margin="0,0,0,12"
-                            Click="CreateCommit_Click" />
-                    
-                    <TextBlock x:Name="UploadStatusText"
-                               Text=""
-                               Foreground="Green"
-                               Margin="0,0,0,12"
-                               TextWrapping="Wrap" />
+                             Background="Transparent"
+                             BorderBrush="Transparent">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="{Binding Name}"
+                                               Foreground="#F0F6FC"
+                                               VerticalAlignment="Center" />
+                                </StackPanel>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
                 </StackPanel>
-            </ScrollViewer>
-        </Border>
+            </Border>
 
-        <!-- Right panel -->
-        <Grid Grid.Column="1" Margin="12">
+            <Border
+                Grid.Row="1"
+                CornerRadius="12"
+                Background="#151B23"
+                BorderBrush="#3D444D"
+                BorderThickness="1"
+                Padding="15">
+                <StackPanel>
+                    <TextBlock Text="Model name"
+                               FontSize="12"
+                               Foreground="#9198A1" />
+
+                    <Border CornerRadius="12"
+                            Background="#0D1117"
+                            BorderBrush="#3D444D"
+                            BorderThickness="1"
+                            Margin="0, 15">
+                        <TextBox x:Name="ModelNameBox"
+                                 Background="Transparent"
+                                 BorderThickness="0"
+                                 Foreground="#F0F6FC"
+                                 Height="44"
+                                 FontSize="16"
+                                 Padding="10, 0"
+                                 VerticalContentAlignment="Center"
+                                 CaretBrush="#F0F6FC" />
+                    </Border>
+
+                    <Button Content="Upload model"
+                            Height="44"
+                            FontSize="16"
+                            Background="#1F71EB"
+                            BorderThickness="0"
+                            Foreground="#F0F6FC"
+                            FontWeight="SemiBold"
+                            Click="UploadSnapshot_Click">
+
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border Background="{TemplateBinding Background}"
+                                        CornerRadius="12">
+                                    <ContentPresenter HorizontalAlignment="Center"
+                                                      VerticalAlignment="Center" />
+                                </Border>
+                            </ControlTemplate>
+                        </Button.Template>
+                    </Button>
+                </StackPanel>
+            </Border>
+        </Grid>
+
+        <!-- CENTER PANEL: Graph (placeholder) + Create commit -->
+        <Grid Grid.Column="1">
             <Grid.RowDefinitions>
-                <RowDefinition Height="Auto" />
+                <RowDefinition Height="220" />
                 <RowDefinition Height="*" />
             </Grid.RowDefinitions>
 
-            <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
-                <Button Content="Download .vox"
-                        Width="140"
-                        Height="32"
-                        Click="Download_Click" />
-            </StackPanel>
+            <Grid Grid.Row="0"
+                  Margin="15, 0, 0, 15">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="300" />
+                </Grid.ColumnDefinitions>
 
-            <Viewport3D x:Name="Viewport"
-                        Grid.Row="1"
-                        MouseDown="Viewport_MouseDown"
-                        MouseMove="Viewport_MouseMove"
-                        MouseUp="Viewport_MouseUp"
-                        MouseWheel="Viewport_MouseWheel">
-                <Viewport3D.Camera>
-                    <PerspectiveCamera x:Name="Camera"
-                                       Position="0,0,120"
-                                       LookDirection="0,0,-120"
-                                       UpDirection="0,1,0"
-                                       FieldOfView="60" />
-                </Viewport3D.Camera>
-            </Viewport3D>
+                <!-- Version Graph Placeholder -->
+                <Border Grid.Column="0"
+                        CornerRadius="12"
+                        Background="#151B23"
+                        BorderBrush="#3D444D"
+                        BorderThickness="1"
+                        Padding="15"
+                        Margin="0, 0, 15, 0">
+                    <TextBlock Text="Version graph (coming soon)"
+                               Foreground="#7a8390"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Center"
+                               FontSize="12" />
+                </Border>
+
+                <!-- RIGHT PANEL: Create commit -->
+                <Border Grid.Column="1"
+                        CornerRadius="12"
+                        Background="#151B23"
+                        BorderBrush="#3D444D"
+                        BorderThickness="1"
+                        Padding="15">
+                    <StackPanel>
+                        <TextBlock Text="Create commit"
+                                   FontSize="16"
+                                   FontWeight="SemiBold"
+                                   Foreground="#F0F6FC"
+                                   HorizontalAlignment="Center" />
+
+                        <Border CornerRadius="12"
+                                Background="#0D1117"
+                                BorderBrush="#3D444D"
+                                BorderThickness="1"
+                                Margin="0, 15">
+                            <TextBox x:Name="CommitMessageBox"
+                                     Background="Transparent"
+                                     BorderThickness="0"
+                                     Foreground="#F0F6FC"
+                                     AcceptsReturn="True"
+                                     Height="44"
+                                     FontSize="16"
+                                     TextWrapping="Wrap"
+                                     VerticalScrollBarVisibility="Auto"
+                                     Margin="0,15"
+                                     Padding="10, 0"
+                                     CaretBrush="#F0F6FC" />
+                        </Border>
+
+                        <Button Content="Commit"
+                                Height="44"
+                                Background="#1F71EB"
+                                BorderThickness="0"
+                                Foreground="#F0F6FC"
+                                FontWeight="SemiBold"
+                                FontSize="16"
+                                Click="CreateCommit_Click">
+
+                            <Button.Template>
+                                <ControlTemplate TargetType="Button">
+                                    <Border Background="{TemplateBinding Background}"
+                                            CornerRadius="12">
+                                        <ContentPresenter HorizontalAlignment="Center"
+                                                          VerticalAlignment="Center" />
+                                    </Border>
+                                </ControlTemplate>
+                            </Button.Template>
+                        </Button>
+
+                        <TextBlock x:Name="UploadStatusText"
+                                   Text=""
+                                   Foreground="#16C60C"
+                                   Margin="0,12,0,0"
+                                   TextWrapping="Wrap"
+                                   FontSize="11" />
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <!-- 3D Viewport -->
+            <Border Grid.Row="1"
+                    CornerRadius="12"
+                    Background="#151B23"
+                    BorderBrush="#3D444D"
+                    BorderThickness="1"
+                    Padding="15"
+                    Margin="15, 0 ,0, 0">
+                <Viewport3D x:Name="Viewport"
+                            MouseDown="Viewport_MouseDown"
+                            MouseMove="Viewport_MouseMove"
+                            MouseUp="Viewport_MouseUp"
+                            MouseWheel="Viewport_MouseWheel">
+                    <Viewport3D.Camera>
+                        <PerspectiveCamera x:Name="Camera"
+                                           Position="0,0,120"
+                                           LookDirection="0,0,-120"
+                                           UpDirection="0,1,0"
+                                           FieldOfView="60" />
+                    </Viewport3D.Camera>
+                </Viewport3D>
+            </Border>
         </Grid>
     </Grid>
 </Window>

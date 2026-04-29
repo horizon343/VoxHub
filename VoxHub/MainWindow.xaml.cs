@@ -83,7 +83,7 @@ public partial class MainWindow : Window
                 return;
 
             var modelName = ModelNameBox.Text;
-            var chunkSize = int.Parse(ChunkSizeBox.Text);
+            var chunkSize = 16;
 
             await vm.UploadSnapshotAsync(modelName, chunkSize, dialog.FileName);
             MessageBox.Show("Snapshot uploaded successfully!");
@@ -110,7 +110,7 @@ public partial class MainWindow : Window
                 return;
 
             var commitMessage = CommitMessageBox.Text;
-            var chunkSize = int.Parse(ChunkSizeBox.Text);
+            var chunkSize = 16;
 
             UploadStatusText.Text = "Uploading commit...";
             await vm.UploadCommitAsync(chunkSize, dialog.FileName, commitMessage);
