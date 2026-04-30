@@ -132,27 +132,133 @@
                 <local:VersionGraphControl x:Name="VersionGraph" />
             </Border>
 
-            <!-- 3D Viewport -->
-            <Border Grid.Row="1"
-                    CornerRadius="12"
-                    Background="#151B23"
-                    BorderBrush="#3D444D"
-                    BorderThickness="1"
-                    Padding="15">
-                <Viewport3D x:Name="Viewport"
-                            MouseDown="Viewport_MouseDown"
-                            MouseMove="Viewport_MouseMove"
-                            MouseUp="Viewport_MouseUp"
-                            MouseWheel="Viewport_MouseWheel">
-                    <Viewport3D.Camera>
-                        <PerspectiveCamera x:Name="Camera"
-                                           Position="0,0,120"
-                                           LookDirection="0,0,-120"
-                                           UpDirection="0,1,0"
-                                           FieldOfView="60" />
-                    </Viewport3D.Camera>
-                </Viewport3D>
-            </Border>
+            <!-- 3D Viewports Grid -->
+            <Grid Grid.Row="1">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+
+                <!-- Primary Viewport -->
+                <Border Grid.Column="0"
+                        CornerRadius="12"
+                        Background="#151B23"
+                        BorderBrush="#3D444D"
+                        BorderThickness="1"
+                        Padding="15"
+                        Margin="0, 0, 7.5, 0">
+                    <Viewport3D x:Name="Viewport"
+                                MouseDown="Viewport_MouseDown"
+                                MouseMove="Viewport_MouseMove"
+                                MouseUp="Viewport_MouseUp"
+                                MouseWheel="Viewport_MouseWheel">
+                        <Viewport3D.Camera>
+                            <PerspectiveCamera x:Name="Camera"
+                                               Position="0,0,120"
+                                               LookDirection="0,0,-120"
+                                               UpDirection="0,1,0"
+                                               FieldOfView="60" />
+                        </Viewport3D.Camera>
+                    </Viewport3D>
+                </Border>
+
+                <!-- Secondary Viewport (hidden by default) -->
+                <Border Grid.Column="1"
+                        x:Name="SecondaryViewportBorder"
+                        CornerRadius="12"
+                        Background="#151B23"
+                        BorderBrush="#3D444D"
+                        BorderThickness="1"
+                        Padding="15"
+                        Margin="7.5, 0, 0, 0"
+                        Visibility="Collapsed">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+
+                        <!-- Sync Buttons -->
+                        <StackPanel Grid.Row="0"
+                                    Orientation="Horizontal"
+                                    Margin="0, 0, 0, 10">
+                            <Button Content="🔗 Sync View"
+                                    Height="28"
+                                    Background="#238636"
+                                    BorderThickness="0"
+                                    Foreground="#F0F6FC"
+                                    FontWeight="SemiBold"
+                                    FontSize="11"
+                                    Margin="0, 0, 8, 0"
+                                    Click="SyncSecondaryToFirst_Click">
+                                <Button.Template>
+                                    <ControlTemplate TargetType="Button">
+                                        <Border Background="{TemplateBinding Background}"
+                                                CornerRadius="8">
+                                            <ContentPresenter HorizontalAlignment="Center"
+                                                              VerticalAlignment="Center" />
+                                        </Border>
+                                    </ControlTemplate>
+                                </Button.Template>
+                            </Button>
+
+                            <Button Content="🔗 Sync Back"
+                                    Height="28"
+                                    Background="#238636"
+                                    BorderThickness="0"
+                                    Foreground="#F0F6FC"
+                                    FontWeight="SemiBold"
+                                    FontSize="11"
+                                    Click="SyncFirstToSecondary_Click">
+                                <Button.Template>
+                                    <ControlTemplate TargetType="Button">
+                                        <Border Background="{TemplateBinding Background}"
+                                                CornerRadius="8">
+                                            <ContentPresenter HorizontalAlignment="Center"
+                                                              VerticalAlignment="Center" />
+                                        </Border>
+                                    </ControlTemplate>
+                                </Button.Template>
+                            </Button>
+
+                            <Button Content="❌ Close"
+                                    Height="28"
+                                    Background="#DA3633"
+                                    BorderThickness="0"
+                                    Foreground="#F0F6FC"
+                                    FontWeight="SemiBold"
+                                    FontSize="11"
+                                    Margin="0, 0, 0, 0"
+                                    Click="CloseSecondaryViewport_Click">
+                                <Button.Template>
+                                    <ControlTemplate TargetType="Button">
+                                        <Border Background="{TemplateBinding Background}"
+                                                CornerRadius="8">
+                                            <ContentPresenter HorizontalAlignment="Center"
+                                                              VerticalAlignment="Center" />
+                                        </Border>
+                                    </ControlTemplate>
+                                </Button.Template>
+                            </Button>
+                        </StackPanel>
+
+                        <Viewport3D Grid.Row="1"
+                                    x:Name="SecondaryViewport"
+                                    MouseDown="SecondaryViewport_MouseDown"
+                                    MouseMove="SecondaryViewport_MouseMove"
+                                    MouseUp="SecondaryViewport_MouseUp"
+                                    MouseWheel="SecondaryViewport_MouseWheel">
+                            <Viewport3D.Camera>
+                                <PerspectiveCamera x:Name="SecondaryCamera"
+                                                   Position="0,0,120"
+                                                   LookDirection="0,0,-120"
+                                                   UpDirection="0,1,0"
+                                                   FieldOfView="60" />
+                            </Viewport3D.Camera>
+                        </Viewport3D>
+                    </Grid>
+                </Border>
+            </Grid>
         </Grid>
         
         <!-- RIGHT PANEL: Version actions + Commit -->

@@ -18,6 +18,22 @@ public partial class MainWindow : Window
     private readonly MainViewModel _viewModel;
     private readonly Dictionary<Guid, VoxelModel> _modelCache = new();
 
+    // Primary viewport state
+    private bool _rotating;
+    private Point _lastMouse;
+    private double _yaw = 45;
+    private double _pitch = 20;
+    private double _distance = 120;
+    private Point3D _target = new(0, 0, 0);
+
+    // Secondary viewport state
+    private bool _secondaryRotating;
+    private Point _secondaryLastMouse;
+    private double _secondaryYaw = 45;
+    private double _secondaryPitch = 20;
+    private double _secondaryDistance = 120;
+    private Point3D _secondaryTarget = new(0, 0, 0);
+
     public MainWindow()
     {
         InitializeComponent();
@@ -48,6 +64,11 @@ public partial class MainWindow : Window
     
         // Рисуем граф после загрузки
         VersionGraph.UpdateGraph(_viewModel.Versions, _viewModel.SelectedVersion?.Id);
+        
+        VersionGraph.VersionRightClicked += (versionId) =>
+        {
+            OnVersionRightClicked(versionId);
+        };
     }
 
     private void OnVersionSelected(Guid versionId)
@@ -75,6 +96,27 @@ public partial class MainWindow : Window
             _target = VoxelViewportRenderer.GetModelCenter(model);
             UpdateCamera();
         }
+    }
+
+    private void OnVersionRightClicked(Guid versionId)
+    {
+        if (_modelCache.TryGetValue(versionId, out var model))
+        {
+            RenderSecondaryModel(model);
+        }
+    }
+
+    private void RenderSecondaryModel(VoxelModel model)
+    {
+        VoxelViewportRenderer.Render(SecondaryViewport, model);
+        
+        _secondaryTarget = VoxelViewportRenderer.GetModelCenter(model);
+        _secondaryYaw = 45;
+        _secondaryPitch = 20;
+        _secondaryDistance = 120;
+        UpdateSecondaryCamera();
+
+        SecondaryViewportBorder.Visibility = Visibility.Visible;
     }
 
     private async void Download_Click(object sender, RoutedEventArgs e)
@@ -221,14 +263,8 @@ public partial class MainWindow : Window
             MessageBox.Show($"Error: {ex.Message}");
         }
     }
-    
-    private bool _rotating;
-    private Point _lastMouse;
-    private double _yaw = 45;
-    private double _pitch = 20;
-    private double _distance = 120;
-    private Point3D _target = new(0, 0, 0);
 
+    // PRIMARY VIEWPORT MOUSE HANDLERS
     private void UpdateCamera()
     {
         var yawRad = _yaw * Math.PI / 180.0;
@@ -283,5 +319,86 @@ public partial class MainWindow : Window
         _distance *= e.Delta > 0 ? 0.9 : 1.1;
         _distance = Math.Clamp(_distance, 20, 1000);
         UpdateCamera();
+    }
+
+    // SECONDARY VIEWPORT MOUSE HANDLERS
+    private void UpdateSecondaryCamera()
+    {
+        var yawRad = _secondaryYaw * Math.PI / 180.0;
+        var pitchRad = _secondaryPitch * Math.PI / 180.0;
+
+        var x = _secondaryDistance * Math.Cos(pitchRad) * Math.Sin(yawRad);
+        var y = _secondaryDistance * Math.Sin(pitchRad);
+        var z = _secondaryDistance * Math.Cos(pitchRad) * Math.Cos(yawRad);
+
+        var position = new Point3D(_secondaryTarget.X + x, _secondaryTarget.Y + y, _secondaryTarget.Z + z);
+
+        SecondaryCamera.Position = position;
+        SecondaryCamera.LookDirection = new Vector3D(_secondaryTarget.X - position.X, _secondaryTarget.Y - position.Y, _secondaryTarget.Z - position.Z);
+        SecondaryCamera.UpDirection = new Vector3D(0, 1, 0);
+    }
+
+    private void SecondaryViewport_MouseDown(object sender, MouseButtonEventArgs e)
+    {
+        if (e.LeftButton != MouseButtonState.Pressed)
+            return;
+
+        _secondaryRotating = true;
+        _secondaryLastMouse = e.GetPosition(this);
+        Mouse.Capture(SecondaryViewport);
+    }
+
+    private void SecondaryViewport_MouseMove(object sender, MouseEventArgs e)
+    {
+        if (!_secondaryRotating)
+            return;
+
+        var current = e.GetPosition(this);
+        var dx = current.X - _secondaryLastMouse.X;
+        var dy = current.Y - _secondaryLastMouse.Y;
+
+        _secondaryYaw -= dx * 0.5;
+        _secondaryPitch += dy * 0.5;
+        _secondaryPitch = Math.Clamp(_secondaryPitch, -89, 89);
+
+        _secondaryLastMouse = current;
+        UpdateSecondaryCamera();
+    }
+
+    private void SecondaryViewport_MouseUp(object sender, MouseButtonEventArgs e)
+    {
+        _secondaryRotating = false;
+        Mouse.Capture(null);
+    }
+
+    private void SecondaryViewport_MouseWheel(object sender, MouseWheelEventArgs e)
+    {
+        _secondaryDistance *= e.Delta > 0 ? 0.9 : 1.1;
+        _secondaryDistance = Math.Clamp(_secondaryDistance, 20, 1000);
+        UpdateSecondaryCamera();
+    }
+
+    // SYNC BUTTONS
+    private void SyncSecondaryToFirst_Click(object sender, RoutedEventArgs e)
+    {
+        _secondaryYaw = _yaw;
+        _secondaryPitch = _pitch;
+        _secondaryDistance = _distance;
+        _secondaryTarget = _target;
+        UpdateSecondaryCamera();
+    }
+
+    private void SyncFirstToSecondary_Click(object sender, RoutedEventArgs e)
+    {
+        _yaw = _secondaryYaw;
+        _pitch = _secondaryPitch;
+        _distance = _secondaryDistance;
+        _target = _secondaryTarget;
+        UpdateCamera();
+    }
+
+    private void CloseSecondaryViewport_Click(object sender, RoutedEventArgs e)
+    {
+        SecondaryViewportBorder.Visibility = Visibility.Collapsed;
     }
 }

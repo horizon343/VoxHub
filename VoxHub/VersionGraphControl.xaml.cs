@@ -20,6 +20,7 @@ public partial class VersionGraphControl : UserControl
     private bool _isPanning;
     private IReadOnlyList<VersionListItem>? _currentVersions;
     private Guid? _currentSelectedVersionId;
+    public event Action<Guid>? VersionRightClicked;
 
     public VersionGraphControl()
     {
@@ -161,7 +162,16 @@ public partial class VersionGraphControl : UserControl
 
         circle.MouseLeftButtonDown += (s, e) =>
         {
-            VersionSelected?.Invoke(versionId);
+            if (e.LeftButton == MouseButtonState.Pressed)
+            {
+                VersionSelected?.Invoke(versionId);
+                e.Handled = true;
+            }
+        };
+
+        circle.MouseRightButtonDown += (s, e) =>
+        {
+            VersionRightClicked?.Invoke(versionId);
             e.Handled = true;
         };
 
