@@ -47,11 +47,17 @@ public sealed class GrpcVoxelCatalogService : IVoxelCatalogService
             .Select(x => new VersionListItem(
                 Guid.Parse(x.Id),
                 x.Kind,
-                string.IsNullOrEmpty(x.ParentVersionId) ? null : Guid.Parse(x.ParentVersionId)))
+                string.IsNullOrEmpty(x.ParentVersionId) ? null : Guid.Parse(x.ParentVersionId),
+                x.Commit != null
+                    ? new CommitInfo(
+                        x.Commit.Message,
+                        UnixTimeStampToDateTime(x.Commit.CreatedAtUtc))
+                    : null))
             .ToList();
     }
 
-    public async Task DownloadModelAsync(Guid versionId, int chunkSize, Stream destination, CancellationToken ct = default)
+    public async Task DownloadModelAsync(Guid versionId, int chunkSize, Stream destination,
+        CancellationToken ct = default)
     {
         var call = _restoreClient.DownloadModel(new DownloadModelRequest
         {
@@ -68,7 +74,8 @@ public sealed class GrpcVoxelCatalogService : IVoxelCatalogService
         await destination.FlushAsync(ct);
     }
 
-    public async Task<Guid> UploadSnapshotAsync(string modelName, int chunkSize, Stream source, CancellationToken ct = default)
+    public async Task<Guid> UploadSnapshotAsync(string modelName, int chunkSize, Stream source,
+        CancellationToken ct = default)
     {
         using var call = _snapshotClient.UploadSnapshot();
 
@@ -101,8 +108,9 @@ public sealed class GrpcVoxelCatalogService : IVoxelCatalogService
         var response = await call.ResponseAsync;
         return Guid.Parse(response.VersionId);
     }
-    
-    public async Task<Guid> UploadCommitAsync(Guid modelId, Guid parentVersionId, string commitMessage, int chunkSize, Stream source, CancellationToken ct = default)
+
+    public async Task<Guid> UploadCommitAsync(Guid modelId, Guid parentVersionId, string commitMessage, int chunkSize,
+        Stream source, CancellationToken ct = default)
     {
         using var call = _commitClient.UploadCommit();
 
@@ -136,5 +144,12 @@ public sealed class GrpcVoxelCatalogService : IVoxelCatalogService
 
         var response = await call.ResponseAsync;
         return Guid.Parse(response.VersionId);
+    }
+
+    private static DateTime UnixTimeStampToDateTime(long unixTimeStamp)
+    {
+        var dateTime = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
+        dateTime = dateTime.AddSeconds(unixTimeStamp).ToLocalTime();
+        return dateTime;
     }
 }

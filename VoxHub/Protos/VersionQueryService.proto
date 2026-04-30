@@ -12,10 +12,17 @@ message ListVersionsRequest {
   string model_id = 1;
 }
 
+message CommitDto {
+  string id = 1;
+  string message = 2;
+  int64 created_at_utc = 3;
+}
+
 message VersionDto {
   string id = 1;
   string parent_version_id = 2;
   string kind = 3;
+  CommitDto commit = 4;
 }
 
 message ListVersionsResponse {
