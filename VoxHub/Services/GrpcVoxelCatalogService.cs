@@ -148,8 +148,23 @@ public sealed class GrpcVoxelCatalogService : IVoxelCatalogService
 
     private static DateTime UnixTimeStampToDateTime(long unixTimeStamp)
     {
-        var dateTime = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
-        dateTime = dateTime.AddSeconds(unixTimeStamp).ToLocalTime();
-        return dateTime;
+        try
+        {
+            // Если это очень большое число, скорее всего это миллисекунды
+            if (unixTimeStamp > 10000000000)
+            {
+                // Преобразуем из миллисекунд в секунды
+                unixTimeStamp /= 1000;
+            }
+
+            var dateTime = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
+            dateTime = dateTime.AddSeconds(unixTimeStamp).ToLocalTime();
+            return dateTime;
+        }
+        catch
+        {
+            // Если что-то пошло не так, возвращаем текущее время
+            return DateTime.Now;
+        }
     }
 }
