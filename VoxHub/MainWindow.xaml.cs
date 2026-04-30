@@ -109,13 +109,16 @@ public partial class MainWindow : Window
     private void RenderSecondaryModel(VoxelModel model)
     {
         VoxelViewportRenderer.Render(SecondaryViewport, model);
-        
+    
         _secondaryTarget = VoxelViewportRenderer.GetModelCenter(model);
         _secondaryYaw = 45;
         _secondaryPitch = 20;
         _secondaryDistance = 120;
         UpdateSecondaryCamera();
 
+        // И��меняем размер колонок: обе по 50%
+        SecondaryColumnDefinition.Width = new GridLength(1, GridUnitType.Star);
+        PrimaryViewportBorder.Margin = new Thickness(0, 0, 7.5, 0);
         SecondaryViewportBorder.Visibility = Visibility.Visible;
     }
 
@@ -399,6 +402,9 @@ public partial class MainWindow : Window
 
     private void CloseSecondaryViewport_Click(object sender, RoutedEventArgs e)
     {
+        // Возвращаем вторую колонку в 0
+        SecondaryColumnDefinition.Width = new GridLength(0);
+        PrimaryViewportBorder.Margin = new Thickness(0, 0, 0, 0);
         SecondaryViewportBorder.Visibility = Visibility.Collapsed;
     }
 }
