@@ -90,7 +90,7 @@ public static class VoxelViewportRenderer
         return material;
     }
 
-    private static IEnumerable<ChunkNode> EnumerateLeafChunks(ChunkNode node)
+    public static IEnumerable<ChunkNode> EnumerateLeafChunks(ChunkNode node)
     {
         if (node.Children.Count == 0)
         {
@@ -361,5 +361,75 @@ public static class VoxelViewportRenderer
 
         var c = model.Palette[index];
         return Color.FromArgb(c.A, c.B, c.G, c.R);
+    }
+    
+    // Добавить в класс VoxelViewportRenderer (под existing methods)
+    public static GeometryModel3D? AppendHighlightToViewport(Viewport3D viewport, Int3[] highlightVoxels, Color color, double opacity)
+    {
+        if (highlightVoxels == null || highlightVoxels.Length == 0)
+            return null;
+
+        // Находим первый ModelVisual3D (тот, где лежит основной group)
+        var existing = viewport.Children.OfType<ModelVisual3D>().FirstOrDefault();
+        if (existing?.Content is not Model3DGroup group)
+            return null; // ничего не рисуем, если базового контента нет
+
+        // Построим меш для переданных вокселей (используем тот же BuildMesh)
+        var mesh = BuildMesh(highlightVoxels);
+        if (mesh.Positions.Count == 0)
+            return null;
+
+        // цвет с учётом opacity
+        var brush = new SolidColorBrush(Color.FromArgb((byte)(Math.Clamp(opacity, 0.0, 1.0) * 255), color.R, color.G, color.B));
+        brush.Freeze();
+
+        var mat = new MaterialGroup();
+        // Чтобы подсветка была видна независимо от освещения — используем Emissive + Diffuse
+        mat.Children.Add(new EmissiveMaterial(brush));
+        mat.Children.Add(new DiffuseMaterial(brush));
+        mat.Freeze();
+
+        var overlay = new GeometryModel3D
+        {
+            Geometry = mesh,
+            Material = mat,
+            BackMaterial = mat
+        };
+
+        // Добавляем поверх основного содержимого
+        group.Children.Add(overlay);
+
+        return overlay;
+    }
+
+    public static void RemoveOverlayFromViewport(Viewport3D viewport, GeometryModel3D? overlay)
+    {
+        if (overlay == null)
+            return;
+
+        var existing = viewport.Children.OfType<ModelVisual3D>().FirstOrDefault();
+        if (existing?.Content is Model3DGroup group)
+        {
+            if (group.Children.Contains(overlay))
+                group.Children.Remove(overlay);
+        }
+    }
+    
+    // публичный обёрток чтобы получить все voxels для модели
+    public static Int3[] GetAllVoxelPositions(VoxelModel model)
+    {
+        return EnumerateLeafChunks(model.RootChunk).SelectMany(ch => ch.Voxels.Select(v => v.Position)).ToArray();
+    }
+
+// публичный обёрток чтобы получить map position->palette
+    public static Dictionary<Int3, byte> GetVoxelMap(VoxelModel model)
+    {
+        var dict = new Dictionary<Int3, byte>();
+        foreach (var leaf in EnumerateLeafChunks(model.RootChunk))
+        {
+            foreach (var v in leaf.Voxels)
+                dict[v.Position] = v.PaletteIndex;
+        }
+        return dict;
     }
 }

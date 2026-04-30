@@ -241,6 +241,39 @@
                                     </ControlTemplate>
                                 </Button.Template>
                             </Button>
+                            
+                            <!-- Color picker + Opacity + ShowDiff -->
+                            <StackPanel Orientation="Horizontal" Margin="8,0,0,0" VerticalAlignment="Center">
+                                <ComboBox x:Name="DiffColorBox" Width="110" Height="28" Margin="0,0,8,0">
+                                    <ComboBoxItem Content="Red" Tag="#FFEA4C4C" IsSelected="False" />
+                                    <ComboBoxItem Content="Green" Tag="#FF58D68D" />
+                                    <ComboBoxItem Content="Cyan" Tag="#FF4DD0E1" />
+                                    <ComboBoxItem Content="Yellow" Tag="#FFF6E05E" />
+                                    <ComboBoxItem Content="Magenta" Tag="#FFE070C8" />
+                                    <ComboBoxItem Content="Orange" Tag="#FFF2994A" />
+                                </ComboBox>
+
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,8,0">
+                                    <TextBlock Text="Opacity" Foreground="#9AA4AD" FontSize="11" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                    <Slider x:Name="DiffOpacitySlider" Minimum="0.1" Maximum="1.0" Value="0.65" Width="110" Height="24" />
+                                </StackPanel>
+
+                                <Button x:Name="ShowDiffButton"
+                                        Content="🔍 Show Diff"
+                                        Height="28"
+                                        Background="#1F71EB"
+                                        Foreground="White"
+                                        Click="ShowDiffButton_Click"
+                                        Margin="0,0,6,0" />
+
+                                <Button x:Name="HideDiffButton"
+                                        Content="✖ Hide Diff"
+                                        Height="28"
+                                        Background="#DA3633"
+                                        Foreground="White"
+                                        Click="HideDiffButton_Click"
+                                        Visibility="Collapsed" />
+                            </StackPanel>
                         </StackPanel>
 
                         <Viewport3D Grid.Row="1"

@@ -1,6 +1,8 @@
 ﻿using System.IO;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
 using System.Windows.Media.Media3D;
 using Microsoft.Win32;
 using VoxHub.Domain.Canonical;
@@ -34,6 +36,12 @@ public partial class MainWindow : Window
     private double _secondaryDistance = 120;
     private Point3D _secondaryTarget = new(0, 0, 0);
 
+    // в начале класса MainWindow
+    private GeometryModel3D? _primaryDiffOverlay;
+    private GeometryModel3D? _secondaryDiffOverlay;
+    private Guid? _secondaryModelVersionId; // id модели во втором viewport (если открыт)
+
+
     public MainWindow()
     {
         InitializeComponent();
@@ -48,27 +56,24 @@ public partial class MainWindow : Window
     private async void MainWindow_Loaded(object sender, RoutedEventArgs e)
     {
         await _viewModel.LoadAsync();
-    
+
         // Подписываемся на события графа версий
         VersionGraph.VersionSelected += OnVersionSelected;
-    
+
         // Подписываемся на изменения в ViewModel
         _viewModel.PropertyChanged += (s, e) =>
         {
-            if (e.PropertyName == nameof(_viewModel.Versions) || 
+            if (e.PropertyName == nameof(_viewModel.Versions) ||
                 e.PropertyName == nameof(_viewModel.SelectedVersion))
             {
                 VersionGraph.UpdateGraph(_viewModel.Versions, _viewModel.SelectedVersion?.Id);
             }
         };
-    
+
         // Рисуем граф после загрузки
         VersionGraph.UpdateGraph(_viewModel.Versions, _viewModel.SelectedVersion?.Id);
-        
-        VersionGraph.VersionRightClicked += (versionId) =>
-        {
-            OnVersionRightClicked(versionId);
-        };
+
+        VersionGraph.VersionRightClicked += (versionId) => { OnVersionRightClicked(versionId); };
     }
 
     private void OnVersionSelected(Guid versionId)
@@ -78,7 +83,7 @@ public partial class MainWindow : Window
         if (version != null)
         {
             _viewModel.SelectedVersion = version;
-            
+
             // Если модель в кэше, отрисовываем её
             if (_modelCache.ContainsKey(versionId))
             {
@@ -92,7 +97,7 @@ public partial class MainWindow : Window
         if (_modelCache.TryGetValue(versionId, out var model))
         {
             VoxelViewportRenderer.Render(Viewport, model);
-            
+
             _target = VoxelViewportRenderer.GetModelCenter(model);
             UpdateCamera();
         }
@@ -102,14 +107,14 @@ public partial class MainWindow : Window
     {
         if (_modelCache.TryGetValue(versionId, out var model))
         {
-            RenderSecondaryModel(model);
+            RenderSecondaryModel(model, versionId);
         }
     }
 
-    private void RenderSecondaryModel(VoxelModel model)
+    private void RenderSecondaryModel(VoxelModel model, Guid versionId)
     {
         VoxelViewportRenderer.Render(SecondaryViewport, model);
-    
+
         _secondaryTarget = VoxelViewportRenderer.GetModelCenter(model);
         _secondaryYaw = 45;
         _secondaryPitch = 20;
@@ -120,6 +125,8 @@ public partial class MainWindow : Window
         SecondaryColumnDefinition.Width = new GridLength(1, GridUnitType.Star);
         PrimaryViewportBorder.Margin = new Thickness(0, 0, 7.5, 0);
         SecondaryViewportBorder.Visibility = Visibility.Visible;
+
+        _secondaryModelVersionId = versionId;
     }
 
     private async void Download_Click(object sender, RoutedEventArgs e)
@@ -152,7 +159,7 @@ public partial class MainWindow : Window
             _modelCache[vm.SelectedVersion.Id] = model;
 
             VoxelViewportRenderer.Render(Viewport, model);
-            
+
             _target = VoxelViewportRenderer.GetModelCenter(model);
             UpdateCamera();
 
@@ -217,7 +224,7 @@ public partial class MainWindow : Window
 
             UploadStatusText.Text = "Uploading commit...";
             await vm.UploadCommitAsync(chunkSize, dialog.FileName, commitMessage);
-            
+
             UploadStatusText.Text = "✓ Commit uploaded successfully!";
             VersionGraph.UpdateGraph(vm.Versions, vm.SelectedVersion?.Id);
             MessageBox.Show("Commit created successfully!");
@@ -255,11 +262,14 @@ public partial class MainWindow : Window
             _modelCache[_viewModel.SelectedVersion.Id] = model;
 
             VoxelViewportRenderer.Render(Viewport, model);
-            
+
             _target = VoxelViewportRenderer.GetModelCenter(model);
             UpdateCamera();
 
             MessageBox.Show("Version downloaded and rendered.");
+            
+            // Clear previous diffs
+            HideDiffButton_Click(null, null); // or call method to clear overlays safely
         }
         catch (Exception ex)
         {
@@ -337,7 +347,8 @@ public partial class MainWindow : Window
         var position = new Point3D(_secondaryTarget.X + x, _secondaryTarget.Y + y, _secondaryTarget.Z + z);
 
         SecondaryCamera.Position = position;
-        SecondaryCamera.LookDirection = new Vector3D(_secondaryTarget.X - position.X, _secondaryTarget.Y - position.Y, _secondaryTarget.Z - position.Z);
+        SecondaryCamera.LookDirection = new Vector3D(_secondaryTarget.X - position.X, _secondaryTarget.Y - position.Y,
+            _secondaryTarget.Z - position.Z);
         SecondaryCamera.UpDirection = new Vector3D(0, 1, 0);
     }
 
@@ -406,5 +417,121 @@ public partial class MainWindow : Window
         SecondaryColumnDefinition.Width = new GridLength(0);
         PrimaryViewportBorder.Margin = new Thickness(0, 0, 0, 0);
         SecondaryViewportBorder.Visibility = Visibility.Collapsed;
+    }
+
+    // Возвращает словарь позиция -> paletteIndex
+    private static Dictionary<Int3, byte> BuildVoxelMap(VoxelModel model)
+    {
+        var map = new Dictionary<Int3, byte>();
+        foreach (var leaf in VoxelViewportRenderer.EnumerateLeafChunks(model.RootChunk))
+        {
+            foreach (var v in leaf.Voxels)
+            {
+                map[new Int3(v.Position.X, v.Position.Y, v.Position.Z)] = v.PaletteIndex;
+            }
+        }
+
+        return map;
+    }
+
+    private void ShowDiffButton_Click(object sender, RoutedEventArgs e)
+    {
+        // Требуем, чтобы у нас были обе модели: текущая (selected) и secondary
+        if (_viewModel.SelectedVersion is null || !_secondaryModelVersionId.HasValue)
+        {
+            MessageBox.Show("Both primary and secondary models must be present (downloaded) to compute diff.");
+            return;
+        }
+
+        var primaryId = _viewModel.SelectedVersion.Id;
+        var secondaryId = _secondaryModelVersionId.Value;
+
+        if (!_modelCache.TryGetValue(primaryId, out var primaryModel) ||
+            !_modelCache.TryGetValue(secondaryId, out var secondaryModel))
+        {
+            MessageBox.Show("Both models must be downloaded and present in cache.");
+            return;
+        }
+
+        // Собираем словари position -> paletteIndex
+        var mapA = VoxelViewportRenderer.GetVoxelMap(primaryModel);
+        var mapB = VoxelViewportRenderer.GetVoxelMap(secondaryModel);
+
+        var setA = new HashSet<Int3>(mapA.Keys);
+        var setB = new HashSet<Int3>(mapB.Keys);
+
+        // Позиции, отличающиеся в A: отсутствуют в B или palette !=
+        var diffA = new List<Int3>();
+        foreach (var pos in setA)
+        {
+            if (!mapB.TryGetValue(pos, out var pb))
+            {
+                diffA.Add(pos);
+            }
+            else
+            {
+                var pa = mapA[pos];
+                if (pa != pb)
+                    diffA.Add(pos);
+            }
+        }
+
+        // Позиции, отличающиеся в B: отсутствуют в A или palette !=
+        var diffB = new List<Int3>();
+        foreach (var pos in setB)
+        {
+            if (!mapA.TryGetValue(pos, out var pa))
+            {
+                diffB.Add(pos);
+            }
+            else
+            {
+                var pb = mapB[pos];
+                if (pa != pb)
+                    diffB.Add(pos);
+            }
+        }
+
+        // Получаем выбранный цвет и opacity
+        var color = Colors.Magenta;
+        if (DiffColorBox.SelectedItem is ComboBoxItem ci && ci.Tag is string hex)
+        {
+            color = (Color)ColorConverter.ConvertFromString(hex);
+        }
+
+        var opacity = DiffOpacitySlider.Value;
+
+        // Удаляем прежние overlays
+        if (_primaryDiffOverlay != null) VoxelViewportRenderer.RemoveOverlayFromViewport(Viewport, _primaryDiffOverlay);
+        if (_secondaryDiffOverlay != null)
+            VoxelViewportRenderer.RemoveOverlayFromViewport(SecondaryViewport, _secondaryDiffOverlay);
+
+        // Добавляем новые overlays (BuildMesh принимает Int3[])
+        _primaryDiffOverlay =
+            VoxelViewportRenderer.AppendHighlightToViewport(Viewport, diffA.ToArray(), color, opacity);
+        _secondaryDiffOverlay =
+            VoxelViewportRenderer.AppendHighlightToViewport(SecondaryViewport, diffB.ToArray(), color, opacity);
+
+        // Показать/спрятать кнопки
+        ShowDiffButton.Visibility = Visibility.Collapsed;
+        HideDiffButton.Visibility = Visibility.Visible;
+    }
+
+    private void HideDiffButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_primaryDiffOverlay != null)
+        {
+            VoxelViewportRenderer.RemoveOverlayFromViewport(Viewport, _primaryDiffOverlay);
+            _primaryDiffOverlay = null;
+        }
+
+        if (_secondaryDiffOverlay != null)
+        {
+            VoxelViewportRenderer.RemoveOverlayFromViewport(SecondaryViewport, _secondaryDiffOverlay);
+            _secondaryDiffOverlay = null;
+        }
+
+        ShowDiffButton.Visibility = Visibility.Visible;
+        HideDiffButton.Visibility = Visibility.Collapsed;
     }
 }
