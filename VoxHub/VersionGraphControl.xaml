@@ -4,6 +4,10 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:local="clr-namespace:VoxHub"
-             Background="Transparent">
-    <Canvas x:Name="GraphCanvas" Background="Transparent" />
+             Background="Transparent"
+             ClipToBounds="True">
+    <Border ClipToBounds="True"
+            Background="Transparent">
+        <Canvas x:Name="GraphCanvas" Background="Transparent" />
+    </Border>
 </UserControl>

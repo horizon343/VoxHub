@@ -3,6 +3,7 @@ using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media.Media3D;
 using Microsoft.Win32;
+using VoxHub.Domain.Canonical;
 using VoxHub.Domain.Importing;
 using VoxHub.Services;
 using VoxHub.ViewModels;
@@ -15,6 +16,7 @@ namespace VoxHub;
 public partial class MainWindow : Window
 {
     private readonly MainViewModel _viewModel;
+    private readonly Dictionary<Guid, VoxelModel> _modelCache = new();
 
     public MainWindow()
     {
@@ -55,6 +57,23 @@ public partial class MainWindow : Window
         if (version != null)
         {
             _viewModel.SelectedVersion = version;
+            
+            // Если модель в кэше, отрисовываем её
+            if (_modelCache.ContainsKey(versionId))
+            {
+                RenderCachedModel(versionId);
+            }
+        }
+    }
+
+    private void RenderCachedModel(Guid versionId)
+    {
+        if (_modelCache.TryGetValue(versionId, out var model))
+        {
+            VoxelViewportRenderer.Render(Viewport, model);
+            
+            _target = VoxelViewportRenderer.GetModelCenter(model);
+            UpdateCamera();
         }
     }
 
@@ -83,6 +102,9 @@ public partial class MainWindow : Window
             await using var fs = File.OpenRead(dialog.FileName);
             var importer = new VoxModelImporter();
             var model = await importer.ImportAsync(fs);
+
+            // Кэшируем модель
+            _modelCache[vm.SelectedVersion.Id] = model;
 
             VoxelViewportRenderer.Render(Viewport, model);
             
@@ -183,6 +205,9 @@ public partial class MainWindow : Window
             await using var fs = File.OpenRead(dialog.FileName);
             var importer = new VoxModelImporter();
             var model = await importer.ImportAsync(fs);
+
+            // Кэшируем модель
+            _modelCache[_viewModel.SelectedVersion.Id] = model;
 
             VoxelViewportRenderer.Render(Viewport, model);
             
